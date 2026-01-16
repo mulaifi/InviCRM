@@ -26,9 +26,9 @@
 - [x] Enable Calendar API
 - [x] Configure OAuth consent screen
 - [x] Create OAuth 2.0 credentials
-- [?] Create Slack app at api.slack.com (blocked: requires HTTPS for OAuth)
-- [?] Configure Slack OAuth scopes (blocked: requires HTTPS for OAuth)
-- [?] Create slash command /leancrm (blocked: requires HTTPS for OAuth)
+- [ ] Create Slack app at api.slack.com (Socket Mode enabled)
+- [ ] Configure Slack OAuth scopes
+- [ ] Create slash command /leancrm
 - [ ] Get Anthropic API key (optional for AI features)
 
 ### Database & Auth
@@ -46,11 +46,13 @@
 - [x] Test email thread association (threadId stored)
 
 ### Slack Bot
-- [?] Test OAuth installation to workspace (blocked: requires HTTPS/staging server)
-- [?] Link Slack workspace to tenant (blocked: requires HTTPS/staging server)
-- [?] Test /leancrm command (blocked: requires HTTPS/staging server)
-- [?] Test contact lookup queries (blocked: requires HTTPS/staging server)
-- [?] Test activity logging via chat (blocked: requires HTTPS/staging server)
+- [ ] Create Slack app at api.slack.com with Socket Mode enabled
+- [ ] Generate App-Level Token (xapp-) with connections:write scope
+- [ ] Test OAuth installation to workspace (Socket Mode enabled for local dev)
+- [ ] Link Slack workspace to tenant
+- [ ] Test /leancrm command
+- [ ] Test contact lookup queries
+- [ ] Test activity logging via chat
 
 ---
 
@@ -60,7 +62,7 @@
 - [x] Entity extraction from emails (extracts contacts, deals, action items)
 - [x] Implement duplicate detection (exact, fuzzy, and AI-based)
 - [x] Add sentiment analysis to activities (buying signals, risk indicators)
-- [ ] Create morning briefing generator
+- [x] Create morning briefing generator (`/leancrm brief` command)
 
 ### Calendar Integration
 - [x] Test Google Calendar sync (worker implemented and bug-fixed)
@@ -86,6 +88,27 @@
 
 ---
 
+## Security Hardening (Pre-Production)
+
+### Critical (P0)
+- [x] Fix cross-tenant user access vulnerability in UsersController
+- [x] Encrypt OAuth tokens at rest (Google, Slack)
+- [x] Add ENCRYPTION_KEY to environment variables
+
+### High (P1)
+- [ ] Fail fast if JWT_SECRET not set in production
+- [ ] Update npm dependencies (npm audit fix)
+- [x] Add @Exclude decorator to User.password field
+- [ ] Create DTO with UUID validation for contact merge endpoint
+
+### Medium (P2)
+- [ ] Change DB_SYNCHRONIZE to explicit opt-in
+- [ ] Validate OAuth redirect URLs against allowlist
+
+See `technical/SECURITY-AUDIT.md` for full details.
+
+---
+
 ## Phase 4: Polish (Future)
 
 - [ ] Microsoft 365 integration
@@ -107,15 +130,17 @@
 
 ## Notes
 
+- Slack bot supports **Socket Mode** for local development (no public URL needed)
 - Slack bot uses single app with OAuth per workspace (not per-tenant apps)
 - Default currency is KWD, configurable per tenant
 - Email sync runs every 5 minutes, calendar every 15 minutes
 - PostgreSQL runs on port 5433 (to avoid conflicts with existing installations)
 - See `technical/SETUP.md` for complete setup instructions
 - See `technical/deployment.md` for production deployment with Docker/Traefik
+- See `technical/SECURITY-AUDIT.md` for security findings and recommendations
 - **Test Credentials:** admin@lean-demo.com / password123
 - **Seed Data:** Run `npm run seed` from packages/database (use `--force` to re-seed)
 - **AI Features:** Require ANTHROPIC_API_KEY environment variable
 
 ---
-*Last Updated: 17 January 2026 (Session 6)*
+*Last Updated: 17 January 2026 (Session 8)*

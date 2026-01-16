@@ -48,24 +48,31 @@ export class UsersController {
   @Get(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findById(id);
+  async findOne(
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.usersService.findByIdAndTenant(id, tenantId);
   }
 
   @Patch(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Update user' })
   async update(
+    @CurrentUser('tenantId') tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.updateByTenant(id, tenantId, updateUserDto);
   }
 
   @Delete(':id')
   @Roles('admin')
   @ApiOperation({ summary: 'Soft delete user' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.softDelete(id);
+  async remove(
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.usersService.softDeleteByTenant(id, tenantId);
   }
 }

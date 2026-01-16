@@ -1,4 +1,5 @@
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { BaseEntity } from './base.entity';
 import { Tenant } from './tenant.entity';
 import { UserIntegration } from './user-integration.entity';
@@ -17,6 +18,7 @@ export class User extends BaseEntity {
   @Column({ length: 255, unique: true })
   email: string;
 
+  @Exclude()
   @Column({ length: 255, nullable: true })
   password: string;
 

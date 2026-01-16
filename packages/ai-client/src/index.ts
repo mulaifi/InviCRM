@@ -8,3 +8,11 @@ export {
   type DuplicateMatch,
   type DuplicateAnalysisResult,
 } from './analyzers/duplicate-detector';
+export {
+  MorningBriefingGenerator,
+  type BriefingInput,
+  type MorningBriefing,
+  type Meeting,
+  type DealSummary,
+  type RecentActivity,
+} from './generators/morning-briefing';

@@ -25,6 +25,13 @@ export class UsersService {
     });
   }
 
+  async findByIdAndTenant(id: string, tenantId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { id, tenantId, isDeleted: false },
+      relations: ['tenant'],
+    });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email, isDeleted: false },
@@ -39,6 +46,15 @@ export class UsersService {
 
   async update(id: string, updateData: Partial<User>): Promise<User> {
     const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    Object.assign(user, updateData);
+    return this.userRepository.save(user);
+  }
+
+  async updateByTenant(id: string, tenantId: string, updateData: Partial<User>): Promise<User> {
+    const user = await this.findByIdAndTenant(id, tenantId);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -79,6 +95,16 @@ export class UsersService {
 
   async softDelete(id: string): Promise<void> {
     const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    await this.userRepository.save(user);
+  }
+
+  async softDeleteByTenant(id: string, tenantId: string): Promise<void> {
+    const user = await this.findByIdAndTenant(id, tenantId);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }

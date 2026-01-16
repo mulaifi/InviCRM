@@ -22,6 +22,9 @@ export { SlackInstallation } from './entities/slack-installation.entity';
 // Data source for migrations
 export { dataSource } from './data-source';
 
+// Utilities
+export { encrypt, decrypt, encryptedTransformer, generateEncryptionKey } from './utils/encryption';
+
 // All entities array for TypeORM
 export const entities = [
   // Dynamic import to avoid circular dependency issues

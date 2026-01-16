@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { User } from './user.entity';
+import { encryptedTransformer } from '../utils/encryption';
 
 @Entity('user_integrations')
 @Index(['userId', 'provider'], { unique: true })
@@ -15,10 +16,10 @@ export class UserIntegration extends BaseEntity {
   @Column({ length: 50 })
   provider: string; // 'google', 'slack', 'microsoft'
 
-  @Column({ name: 'access_token', type: 'text', nullable: true })
+  @Column({ name: 'access_token', type: 'text', nullable: true, transformer: encryptedTransformer })
   accessToken: string;
 
-  @Column({ name: 'refresh_token', type: 'text', nullable: true })
+  @Column({ name: 'refresh_token', type: 'text', nullable: true, transformer: encryptedTransformer })
   refreshToken: string;
 
   @Column({ name: 'token_expires_at', type: 'timestamp', nullable: true })

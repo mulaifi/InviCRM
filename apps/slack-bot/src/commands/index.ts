@@ -1,7 +1,7 @@
 import { App } from '@slack/bolt';
 import { DataSource } from 'typeorm';
-import { Contact, Deal, Activity } from '@invicrm/database';
-import { AIClient, NaturalLanguageParser } from '@invicrm/ai-client';
+import { Contact, Deal, Activity, Task, User } from '@invicrm/database';
+import { AIClient, NaturalLanguageParser, MorningBriefingGenerator, type BriefingInput } from '@invicrm/ai-client';
 import { SlackInstallationStore } from '../stores/installation-store';
 import { formatCurrency } from '@invicrm/shared';
 
@@ -10,12 +10,16 @@ export function registerCommands(app: App, db: DataSource) {
   const contactRepo = db.getRepository(Contact);
   const dealRepo = db.getRepository(Deal);
   const activityRepo = db.getRepository(Activity);
+  const taskRepo = db.getRepository(Task);
+  const userRepo = db.getRepository(User);
 
   // Initialize AI client if available
   let nlParser: NaturalLanguageParser | null = null;
+  let briefingGenerator: MorningBriefingGenerator | null = null;
   if (process.env.ANTHROPIC_API_KEY) {
     const aiClient = new AIClient({ apiKey: process.env.ANTHROPIC_API_KEY });
     nlParser = new NaturalLanguageParser(aiClient);
+    briefingGenerator = new MorningBriefingGenerator(aiClient);
   }
 
   // Main slash command: /leancrm
@@ -35,7 +39,7 @@ export function registerCommands(app: App, db: DataSource) {
 
     const query = command.text.trim();
 
-    if (!query) {
+    if (!query || query === 'help') {
       await respond({
         blocks: [
           {
@@ -49,12 +53,18 @@ export function registerCommands(app: App, db: DataSource) {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: '• "What\'s happening with [contact name]?"\n• "Show my deals closing this month"\n• "Who haven\'t I contacted in 2 weeks?"\n• "Just had a call with [name] about [topic]"',
+              text: '• `/leancrm brief` - Get your morning briefing\n• "What\'s happening with [contact name]?"\n• "Show my deals closing this month"\n• "Who haven\'t I contacted in 2 weeks?"\n• "Just had a call with [name] about [topic]"',
             },
           },
         ],
         response_type: 'ephemeral',
       });
+      return;
+    }
+
+    // Handle direct commands
+    if (query.toLowerCase() === 'brief' || query.toLowerCase() === 'briefing') {
+      await handleMorningBriefing(tenantId, command.user_id, respond, client);
       return;
     }
 
@@ -193,7 +203,7 @@ export function registerCommands(app: App, db: DataSource) {
   }
 
   // Deals list handler
-  async function handleDealsList(tenantId: string, timeframe: string | undefined, respond: any) {
+  async function handleDealsList(tenantId: string, _timeframe: string | undefined, respond: any) {
     const now = new Date();
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
@@ -309,6 +319,150 @@ export function registerCommands(app: App, db: DataSource) {
       blocks,
       response_type: 'ephemeral',
     });
+  }
+
+  // Morning briefing handler
+  async function handleMorningBriefing(tenantId: string, slackUserId: string, respond: any, client: any) {
+    if (!briefingGenerator) {
+      await respond({
+        text: 'Morning briefings require AI features. Please contact your admin to configure the Anthropic API key.',
+        response_type: 'ephemeral',
+      });
+      return;
+    }
+
+    await respond({
+      text: ':coffee: Preparing your morning briefing...',
+      response_type: 'ephemeral',
+    });
+
+    try {
+      // Get user info from Slack
+      const slackUserInfo = await client.users.info({ user: slackUserId });
+      const userEmail = slackUserInfo.user?.profile?.email;
+
+      // Find the user in our system (for future user-specific briefings)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const crmUser = userEmail
+        ? await userRepo.findOne({ where: { email: userEmail, tenantId, isDeleted: false } })
+        : null;
+      // TODO: Use crmUser to filter by assigned deals/contacts in future
+
+      const userName = slackUserInfo.user?.profile?.real_name || 'there';
+      const timezone = slackUserInfo.user?.tz || 'Asia/Kuwait';
+
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      // Fetch today's meetings (from activities of type 'meeting' scheduled for today)
+      const meetings = await activityRepo
+        .createQueryBuilder('activity')
+        .leftJoinAndSelect('activity.contact', 'contact')
+        .leftJoinAndSelect('contact.company', 'company')
+        .where('activity.tenant_id = :tenantId', { tenantId })
+        .andWhere('activity.type = :type', { type: 'meeting' })
+        .andWhere('activity.is_deleted = false')
+        .andWhere('DATE(activity.occurred_at) = :today', { today })
+        .orderBy('activity.occurred_at', 'ASC')
+        .getMany();
+
+      // Fetch deals needing attention (stale > 7 days, or high value)
+      const staleDeals = await dealRepo
+        .createQueryBuilder('deal')
+        .leftJoinAndSelect('deal.contact', 'contact')
+        .leftJoinAndSelect('deal.company', 'company')
+        .leftJoinAndSelect('deal.stage', 'stage')
+        .where('deal.tenant_id = :tenantId', { tenantId })
+        .andWhere('deal.is_deleted = false')
+        .andWhere('deal.status = :status', { status: 'open' })
+        .andWhere('(deal.updated_at < :staleDate OR deal.amount > :highValue)', {
+          staleDate: sevenDaysAgo,
+          highValue: 50000,
+        })
+        .orderBy('deal.amount', 'DESC')
+        .limit(5)
+        .getMany();
+
+      // Fetch recent activities (last 24 hours)
+      const recentActivities = await activityRepo
+        .createQueryBuilder('activity')
+        .leftJoinAndSelect('activity.contact', 'contact')
+        .leftJoinAndSelect('contact.company', 'company')
+        .where('activity.tenant_id = :tenantId', { tenantId })
+        .andWhere('activity.is_deleted = false')
+        .andWhere('activity.occurred_at > :yesterday', { yesterday })
+        .orderBy('activity.occurred_at', 'DESC')
+        .limit(10)
+        .getMany();
+
+      // Fetch open tasks
+      const openTasks = await taskRepo
+        .createQueryBuilder('task')
+        .where('task.tenant_id = :tenantId', { tenantId })
+        .andWhere('task.is_deleted = false')
+        .andWhere('task.status != :completed', { completed: 'completed' })
+        .orderBy('task.priority', 'DESC')
+        .addOrderBy('task.due_date', 'ASC')
+        .limit(10)
+        .getMany();
+
+      // Build briefing input
+      const briefingInput: BriefingInput = {
+        userName,
+        date: new Date().toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+        timezone,
+        meetings: meetings.map(m => ({
+          title: m.subject,
+          startTime: m.occurredAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+          endTime: m.occurredAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+          attendees: m.contact
+            ? [{ name: `${m.contact.firstName} ${m.contact.lastName || ''}`, email: m.contact.email || '', company: m.contact.company?.name }]
+            : [],
+          description: m.body,
+        })),
+        dealsNeedingAttention: staleDeals.map(d => ({
+          name: d.name,
+          company: d.company?.name || 'Unknown',
+          value: d.amount || 0,
+          currency: 'KWD',
+          stage: d.stage?.name || 'Unknown',
+          daysSinceLastActivity: Math.floor((now.getTime() - d.updatedAt.getTime()) / (1000 * 60 * 60 * 24)),
+          riskLevel: d.amount && d.amount > 100000 ? 'high' as const : 'medium' as const,
+        })),
+        recentActivities: recentActivities.map(a => ({
+          type: a.type as 'email' | 'meeting' | 'call' | 'note',
+          subject: a.subject,
+          contactName: a.contact ? `${a.contact.firstName} ${a.contact.lastName || ''}` : 'Unknown',
+          company: a.contact?.company?.name,
+          timestamp: a.occurredAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+        })),
+        openTasks: openTasks.map(t => ({
+          title: t.title,
+          dueDate: t.dueDate?.toLocaleDateString('en-GB'),
+          priority: t.priority as 'low' | 'medium' | 'high',
+        })),
+      };
+
+      // Generate the briefing
+      const briefingMessage = await briefingGenerator.generateSlackMessage(briefingInput);
+
+      await respond({
+        text: briefingMessage,
+        response_type: 'ephemeral',
+      });
+    } catch (error) {
+      console.error('Error generating morning briefing:', error);
+      await respond({
+        text: 'Sorry, I had trouble generating your briefing. Please try again.',
+        response_type: 'ephemeral',
+      });
+    }
   }
 
   // Basic query handler (fallback without AI)

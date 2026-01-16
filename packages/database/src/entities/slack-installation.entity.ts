@@ -1,5 +1,6 @@
 import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { encryptedTransformer } from '../utils/encryption';
 
 @Entity('slack_installations')
 export class SlackInstallation extends BaseEntity {
@@ -17,7 +18,7 @@ export class SlackInstallation extends BaseEntity {
   @Column({ name: 'bot_user_id', length: 50 })
   botUserId: string;
 
-  @Column({ name: 'bot_access_token', type: 'text' })
+  @Column({ name: 'bot_access_token', type: 'text', transformer: encryptedTransformer })
   botAccessToken: string;
 
   @Column({ name: 'installed_by_user_id', type: 'uuid', nullable: true })

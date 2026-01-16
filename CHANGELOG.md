@@ -4,6 +4,118 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - Security Fixes & Morning Briefing (Session 8)
+
+### Accomplished
+- Fixed all P0 critical security vulnerabilities
+- Added token encryption for OAuth credentials at rest
+- Updated Slack setup documentation for Socket Mode
+- Implemented AI-powered morning briefing generator
+
+### Security Fixes
+
+**Cross-Tenant Access Vulnerability (P0):**
+- Added `findByIdAndTenant()`, `updateByTenant()`, `softDeleteByTenant()` to UsersService
+- Updated UsersController to verify tenant ownership on all user operations
+- Admin users can now only access users within their own tenant
+
+**OAuth Token Encryption (P0):**
+- Created `packages/database/src/utils/encryption.ts` with AES-256-GCM encryption
+- Added TypeORM transformer for automatic encrypt/decrypt on save/load
+- Applied to `UserIntegration.accessToken`, `UserIntegration.refreshToken`
+- Applied to `SlackInstallation.botAccessToken`
+- Graceful degradation: stores unencrypted in dev if ENCRYPTION_KEY not set
+
+**Password Field Protection (P1):**
+- Added `@Exclude()` decorator to User.password field
+- Prevents password hash from leaking in API responses via class-transformer
+
+### Morning Briefing Feature
+- Created `MorningBriefingGenerator` class in ai-client package
+- Generates personalized daily briefings with AI analysis
+- Added `/leancrm brief` command to Slack bot
+- Briefing includes:
+  - Greeting and day-at-a-glance summary
+  - Meeting prep notes with suggested talking points
+  - Deals needing attention with urgency levels
+  - Task reminders and daily goals
+  - Motivational note
+- Formatted for Slack with proper markdown and emojis
+
+### Modified Files
+- `apps/api/src/modules/users/users.controller.ts` - Tenant-aware endpoints
+- `apps/api/src/modules/users/users.service.ts` - Tenant-aware methods
+- `packages/database/src/entities/user-integration.entity.ts` - Encrypted tokens
+- `packages/database/src/entities/slack-installation.entity.ts` - Encrypted token
+- `packages/database/src/entities/user.entity.ts` - @Exclude password
+- `apps/slack-bot/src/commands/index.ts` - Added brief command handler
+- `.env.example` - Added ENCRYPTION_KEY variable
+- `technical/SETUP.md` - Detailed Socket Mode setup instructions
+
+### New Files
+- `packages/database/src/utils/encryption.ts` - Encryption utilities
+- `packages/ai-client/src/generators/morning-briefing.ts` - AI briefing generator
+
+### Next Steps
+1. Create Slack app with Socket Mode at api.slack.com
+2. Test Slack bot locally
+
+---
+
+## [17 January 2026] - Slack Socket Mode & Security Audit (Session 7)
+
+### Accomplished
+- Enabled Socket Mode for Slack bot (local development without public URL)
+- Completed comprehensive security audit of the entire codebase
+- Documented all security findings with remediation recommendations
+
+### Slack Bot Updates
+- Added Socket Mode support for local development
+- Bot auto-detects mode based on SLACK_APP_TOKEN environment variable
+- No public URL or HTTPS required for local Slack testing
+- Updated .env.example with Socket Mode configuration
+
+### Security Audit Findings
+
+**Critical (3 issues):**
+1. OAuth tokens stored in plain text in database
+2. Slack bot tokens stored in plain text
+3. Cross-tenant user access vulnerability in UsersController
+
+**High (4 issues):**
+4. Default JWT secret used when not configured
+5. NPM dependency vulnerabilities (glob, tar, @nestjs/cli)
+6. Password field not excluded from serialization
+7. Merge endpoint missing UUID validation in body
+
+**Medium (2 issues):**
+8. DB synchronize based on NODE_ENV
+9. OAuth redirect URL not validated
+
+**Security Best Practices Already Present:**
+- Helmet middleware for security headers
+- ValidationPipe with whitelist mode
+- Rate limiting (100 req/60s)
+- Parameterized queries (no SQL injection)
+- bcrypt password hashing (12 rounds)
+- Tenant isolation in most queries
+
+### New Files
+- `technical/SECURITY-AUDIT.md` - Full security audit report with recommendations
+
+### Modified Files
+- `apps/slack-bot/src/main.ts` - Added Socket Mode support
+- `.env.example` - Added SLACK_APP_TOKEN and SLACK_BOT_TOKEN
+- `PROJECT-TODO.md` - Added Security Hardening section, updated Slack tasks
+
+### Next Steps
+1. Fix P0 security issues (cross-tenant access, token encryption)
+2. Create Slack app with Socket Mode enabled
+3. Test Slack bot locally
+4. Continue with morning briefing generator
+
+---
+
 ## [17 January 2026] - Docker Production Setup & AI Features (Session 6)
 
 ### Accomplished

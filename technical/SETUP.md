@@ -78,31 +78,69 @@ The API will be available at:
    GOOGLE_CLIENT_SECRET=your-client-secret
    ```
 
-### Slack App
+### Slack App (Socket Mode for Local Development)
+
+Socket Mode allows testing the Slack bot locally without a public URL or HTTPS.
 
 1. Go to [Slack API](https://api.slack.com/apps)
 2. Create New App > From scratch
-3. App Name: InviCRM, select your workspace
-4. Configure OAuth & Permissions:
-   - Redirect URLs: `http://localhost:3002/slack/oauth_redirect`
-   - Bot Token Scopes:
-     - `chat:write`
-     - `commands`
-     - `im:history`
-     - `im:read`
-     - `im:write`
-     - `users:read`
-     - `users:read.email`
-5. Create Slash Command:
+   - App Name: InviCRM
+   - Select your workspace
+
+3. **Enable Socket Mode** (Settings > Socket Mode):
+   - Toggle "Enable Socket Mode" ON
+   - Generate App-Level Token:
+     - Token Name: `socket-token`
+     - Scope: `connections:write`
+   - Copy the token (starts with `xapp-`)
+
+4. **Configure Bot Token Scopes** (Features > OAuth & Permissions):
+   - `chat:write`
+   - `commands`
+   - `im:history`
+   - `im:read`
+   - `im:write`
+   - `users:read`
+   - `users:read.email`
+
+5. **Create Slash Command** (Features > Slash Commands):
    - Command: `/leancrm`
-   - Request URL: `http://localhost:3002/slack/events`
-6. Install App to Workspace
-7. Copy credentials to `.env.local`:
+   - Short Description: "InviCRM commands"
+   - Usage Hint: `[contact|deal|log|brief]`
+   - (No Request URL needed in Socket Mode)
+
+6. **Enable Events** (Features > Event Subscriptions):
+   - Toggle ON (no URL needed in Socket Mode)
+   - Subscribe to bot events:
+     - `message.im` (Direct messages)
+     - `app_mention` (When mentioned)
+
+7. **Install App to Workspace**:
+   - Go to OAuth & Permissions
+   - Click "Install to Workspace"
+   - Copy the Bot User OAuth Token (starts with `xoxb-`)
+
+8. **Add credentials to `.env.local`**:
    ```
-   SLACK_CLIENT_ID=your-client-id
-   SLACK_CLIENT_SECRET=your-client-secret
-   SLACK_SIGNING_SECRET=your-signing-secret
+   # Socket Mode tokens (for local development)
+   SLACK_APP_TOKEN=xapp-1-...
+   SLACK_BOT_TOKEN=xoxb-...
    ```
+
+9. **Start the Slack bot**:
+   ```bash
+   cd apps/slack-bot
+   npm run dev
+   ```
+
+10. **Test**: Open Slack, DM the bot or use `/leancrm help`
+
+**Note**: For production deployment with HTTP mode, you'll also need:
+```
+SLACK_CLIENT_ID=your-client-id
+SLACK_CLIENT_SECRET=your-client-secret
+SLACK_SIGNING_SECRET=your-signing-secret
+```
 
 ### Anthropic (Claude AI)
 
