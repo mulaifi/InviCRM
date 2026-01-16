@@ -30,6 +30,11 @@ All notable changes to InviCRM.
 - `apps/sync-service/src/workers/email-sync.worker.ts`
 - `apps/sync-service/src/workers/calendar-sync.worker.ts`
 
+### Git Repository
+- Initialized git repository on `main` branch
+- Created initial commit with 114 files (24,105 lines)
+- Commit: `ff5b265 Initial commit: InviCRM MVP foundation`
+
 ### Next Steps
 - Deploy to staging server with HTTPS for Slack testing
 - Test Slack bot OAuth and /leancrm command
