@@ -9,8 +9,9 @@ import {
   Company,
   Activity,
   EmailSyncState,
+  Task,
 } from '@invicrm/database';
-import { AIClient, EntityExtractor } from '@invicrm/ai-client';
+import { AIClient, EntityExtractor, SentimentAnalyzer, ExtractedEntities } from '@invicrm/ai-client';
 
 export interface EmailSyncJob {
   userId?: string;
@@ -27,7 +28,9 @@ export class EmailSyncWorker {
   private companyRepo: Repository<Company>;
   private activityRepo: Repository<Activity>;
   private syncStateRepo: Repository<EmailSyncState>;
+  private taskRepo: Repository<Task>;
   private entityExtractor: EntityExtractor | null = null;
+  private sentimentAnalyzer: SentimentAnalyzer | null = null;
 
   constructor(
     db: DataSource,
@@ -39,6 +42,7 @@ export class EmailSyncWorker {
     this.companyRepo = db.getRepository(Company);
     this.activityRepo = db.getRepository(Activity);
     this.syncStateRepo = db.getRepository(EmailSyncState);
+    this.taskRepo = db.getRepository(Task);
 
     // Initialize AI client if API key is available
     if (process.env.ANTHROPIC_API_KEY) {
@@ -46,6 +50,7 @@ export class EmailSyncWorker {
         apiKey: process.env.ANTHROPIC_API_KEY,
       });
       this.entityExtractor = new EntityExtractor(aiClient);
+      this.sentimentAnalyzer = new SentimentAnalyzer(aiClient);
     }
   }
 
@@ -361,19 +366,169 @@ export class EmailSyncWorker {
       await this.contactRepo.save(contact);
     }
 
-    // Extract entities using AI (if available)
-    if (this.entityExtractor && body.length > 50) {
+    // AI Analysis (entity extraction + sentiment)
+    if ((this.entityExtractor || this.sentimentAnalyzer) && body.length > 50) {
+      await this.performAIAnalysis(activity, contact, subject, body, tenantId, userId);
+    }
+  }
+
+  private async performAIAnalysis(
+    activity: Activity,
+    contact: Contact | null,
+    subject: string,
+    body: string,
+    tenantId: string,
+    userId: string,
+  ) {
+    let entities: ExtractedEntities | null = null;
+
+    // Extract entities
+    if (this.entityExtractor) {
       try {
-        const entities = await this.entityExtractor.extractFromEmail(subject, body);
+        entities = await this.entityExtractor.extractFromEmail(subject, body);
+
         // Store extracted data in activity metadata
         activity.metadata = {
           ...activity.metadata,
           extractedEntities: entities,
+          aiSummary: entities.summary,
         };
         await this.activityRepo.save(activity);
+
+        // Enrich contact with extracted information
+        if (contact && entities.contacts.length > 0) {
+          await this.enrichContactFromExtraction(contact, entities);
+        }
+
+        // Create tasks from action items
+        if (entities.actionItems.length > 0) {
+          await this.createTasksFromActionItems(
+            entities.actionItems,
+            tenantId,
+            userId,
+            contact?.id,
+            activity.id,
+          );
+        }
       } catch (err) {
         console.error('Entity extraction failed:', err);
       }
+    }
+
+    // Analyze sentiment
+    if (this.sentimentAnalyzer) {
+      try {
+        const sentiment = await this.sentimentAnalyzer.analyzeCommunication(
+          `Subject: ${subject}\n\n${body}`,
+          activity.direction === 'inbound' ? 'Incoming email from prospect/customer' : 'Outgoing email to prospect/customer',
+        );
+
+        activity.metadata = {
+          ...activity.metadata,
+          sentiment: {
+            value: sentiment.sentiment,
+            score: sentiment.score,
+            confidence: sentiment.confidence,
+            buyingSignals: sentiment.buyingSignals,
+            riskIndicators: sentiment.riskIndicators,
+          },
+        };
+        await this.activityRepo.save(activity);
+      } catch (err) {
+        console.error('Sentiment analysis failed:', err);
+      }
+    }
+  }
+
+  private async enrichContactFromExtraction(
+    contact: Contact,
+    entities: ExtractedEntities,
+  ) {
+    // Find matching extracted contact by email
+    const matchingExtracted = entities.contacts.find(
+      (c) => c.email?.toLowerCase() === contact.email?.toLowerCase(),
+    );
+
+    if (!matchingExtracted) return;
+
+    let updated = false;
+
+    // Only update fields if extracted with high confidence and contact doesn't have them
+    if (matchingExtracted.title && !contact.title && matchingExtracted.confidence >= 0.7) {
+      contact.title = matchingExtracted.title;
+      updated = true;
+    }
+
+    if (matchingExtracted.phone && !contact.phone && matchingExtracted.confidence >= 0.7) {
+      contact.phone = matchingExtracted.phone;
+      updated = true;
+    }
+
+    // Update name if current name is just email prefix
+    if (
+      matchingExtracted.firstName &&
+      matchingExtracted.lastName &&
+      matchingExtracted.confidence >= 0.8 &&
+      contact.firstName === contact.email?.split('@')[0]
+    ) {
+      contact.firstName = matchingExtracted.firstName;
+      contact.lastName = matchingExtracted.lastName;
+      updated = true;
+    }
+
+    // Store additional extracted info in custom fields
+    if (matchingExtracted.company && !contact.customFields?.extractedCompany) {
+      contact.customFields = {
+        ...contact.customFields,
+        extractedCompany: matchingExtracted.company,
+      };
+      updated = true;
+    }
+
+    if (updated) {
+      // Increase confidence score as we have more data
+      contact.confidenceScore = Math.min(1.0, contact.confidenceScore + 0.1);
+      await this.contactRepo.save(contact);
+      console.log(`Enriched contact ${contact.email} with AI-extracted data`);
+    }
+  }
+
+  private async createTasksFromActionItems(
+    actionItems: { action: string; assignee?: string; deadline?: string; confidence: number }[],
+    tenantId: string,
+    userId: string,
+    contactId?: string,
+    sourceActivityId?: string,
+  ) {
+    for (const item of actionItems) {
+      // Only create tasks for high-confidence action items
+      if (item.confidence < 0.7) continue;
+
+      // Parse deadline if provided
+      let dueDate: Date | undefined;
+      if (item.deadline) {
+        const parsed = new Date(item.deadline);
+        if (!isNaN(parsed.getTime())) {
+          dueDate = parsed;
+        }
+      }
+
+      const task = this.taskRepo.create({
+        tenantId,
+        title: item.action.substring(0, 500),
+        description: sourceActivityId
+          ? `Auto-created from email activity. Assignee mentioned: ${item.assignee || 'Not specified'}`
+          : undefined,
+        status: 'pending',
+        priority: 'medium',
+        dueDate,
+        assignedToId: userId,
+        createdById: userId,
+        contactId,
+      });
+
+      await this.taskRepo.save(task);
+      console.log(`Created task from email: "${item.action.substring(0, 50)}..."`);
     }
   }
 

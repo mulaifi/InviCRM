@@ -4,6 +4,56 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - Docker Production Setup & AI Features (Session 6)
+
+### Accomplished
+- Created production-ready Docker deployment configuration
+- Implemented AI entity extraction with contact enrichment
+- Added sentiment analysis to email activities
+- Built duplicate contact detection system
+- Added contact merge functionality
+
+### Docker & Deployment
+- Created multi-stage Dockerfile for all apps (api, sync-service, slack-bot)
+- Created docker-compose.prod.yml with Traefik reverse proxy for automatic HTTPS
+- Added .dockerignore for optimized builds
+- Added .env.prod.example template with all required variables
+- Updated technical/deployment.md with comprehensive production deployment guide
+
+### AI Features (Phase 2)
+- **Entity Extraction:** Enhanced email sync to extract contacts, deals, action items from emails
+- **Contact Enrichment:** Automatically updates contact records with extracted data (title, phone, name)
+- **Task Creation:** Auto-creates tasks from high-confidence action items found in emails
+- **Sentiment Analysis:** Analyzes each email for sentiment, buying signals, and risk indicators
+- **Duplicate Detection:** Three-tier system (exact match, fuzzy name, AI-based) for finding duplicate contacts
+- **Contact Merge:** API endpoint to merge duplicate contacts with full activity/deal reassignment
+
+### New Files
+- `Dockerfile` - Multi-stage build for all apps
+- `.dockerignore` - Optimized Docker context
+- `infrastructure/docker/docker-compose.prod.yml` - Production orchestration with Traefik
+- `infrastructure/docker/.env.prod.example` - Production environment template
+- `packages/ai-client/src/analyzers/duplicate-detector.ts` - Duplicate detection logic
+
+### Modified Files
+- `apps/sync-service/src/workers/email-sync.worker.ts` - Added AI analysis pipeline
+- `apps/api/src/modules/contacts/contacts.service.ts` - Added duplicate detection and merge
+- `apps/api/src/modules/contacts/contacts.controller.ts` - Added duplicate/merge endpoints
+- `packages/ai-client/src/index.ts` - Exported DuplicateDetector
+- `technical/deployment.md` - Comprehensive production deployment guide
+
+### API Endpoints Added
+- `GET /api/v1/contacts/duplicates/detect` - Detect duplicate contacts
+- `POST /api/v1/contacts/merge` - Merge two contacts
+
+### Next Steps
+- Deploy to staging server with HTTPS
+- Test Slack bot OAuth
+- Implement morning briefing generator
+- Start WhatsApp Chrome extension
+
+---
+
 ## [17 January 2026] - Sync Worker Bug Fixes & Calendar Integration (Session 5)
 
 ### Accomplished

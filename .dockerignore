@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs (will be rebuilt in Docker)
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Development files
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Documentation (not needed in container)
+*.md
+!README.md
+docs
+technical
+
+# Test files
+test
+tests
+**/*.test.ts
+**/*.spec.ts
+coverage
+.nyc_output
+
+# Local development
+infrastructure/docker/docker-compose.yml
+pgadmin_data
+postgres_data
+redis_data
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo

@@ -81,4 +81,28 @@ export class ContactsController {
   ) {
     return this.contactsService.softDelete(tenantId, id);
   }
+
+  @Get('duplicates/detect')
+  @ApiOperation({ summary: 'Detect potential duplicate contacts' })
+  @ApiQuery({ name: 'useAI', required: false, type: Boolean })
+  @ApiQuery({ name: 'minConfidence', required: false, type: Number })
+  detectDuplicates(
+    @CurrentUser('tenantId') tenantId: string,
+    @Query('useAI') useAI?: boolean,
+    @Query('minConfidence') minConfidence?: number,
+  ) {
+    return this.contactsService.detectDuplicates(tenantId, {
+      useAI: useAI !== false,
+      minConfidence: minConfidence || 0.5,
+    });
+  }
+
+  @Post('merge')
+  @ApiOperation({ summary: 'Merge two contacts (secondary into primary)' })
+  merge(
+    @CurrentUser('tenantId') tenantId: string,
+    @Body() body: { primaryId: string; secondaryId: string },
+  ) {
+    return this.contactsService.mergeContacts(tenantId, body.primaryId, body.secondaryId);
+  }
 }

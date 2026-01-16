@@ -1,18 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, In } from 'typeorm';
 import { Contact, Company } from '@invicrm/database';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
+import {
+  AIClient,
+  DuplicateDetector,
+  ContactForDuplication,
+  DuplicateAnalysisResult,
+} from '@invicrm/ai-client';
 
 @Injectable()
 export class ContactsService {
+  private duplicateDetector: DuplicateDetector | null = null;
+
   constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
     @InjectRepository(Company)
     private readonly companyRepository: Repository<Company>,
-  ) {}
+  ) {
+    // Initialize AI-based duplicate detector if API key available
+    if (process.env.ANTHROPIC_API_KEY) {
+      const aiClient = new AIClient({ apiKey: process.env.ANTHROPIC_API_KEY });
+      this.duplicateDetector = new DuplicateDetector(aiClient);
+    }
+  }
 
   async create(tenantId: string, createContactDto: CreateContactDto): Promise<Contact> {
     // Auto-create company from email domain if not provided
@@ -177,5 +191,90 @@ export class ContactsService {
   private domainToCompanyName(domain: string): string {
     const name = domain.split('.')[0];
     return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  async detectDuplicates(
+    tenantId: string,
+    options: { useAI?: boolean; minConfidence?: number } = {},
+  ): Promise<DuplicateAnalysisResult> {
+    // Get all contacts for this tenant
+    const contacts = await this.contactRepository.find({
+      where: { tenantId, isDeleted: false },
+      relations: ['company'],
+    });
+
+    // Convert to the format needed by DuplicateDetector
+    const contactsForAnalysis: ContactForDuplication[] = contacts.map((c) => ({
+      id: c.id,
+      email: c.email || undefined,
+      phone: c.phone || undefined,
+      firstName: c.firstName,
+      lastName: c.lastName || undefined,
+      company: c.company?.name || undefined,
+    }));
+
+    // If no AI client, just use exact matching
+    if (!this.duplicateDetector) {
+      const detector = new DuplicateDetector(null as any);
+      const exactDuplicates = detector.detectExactDuplicates(contactsForAnalysis);
+      const fuzzyDuplicates = detector.detectFuzzyNameDuplicates(contactsForAnalysis);
+      return {
+        duplicates: [...exactDuplicates, ...fuzzyDuplicates],
+        totalAnalyzed: contacts.length,
+      };
+    }
+
+    return this.duplicateDetector.analyzeForDuplicates(contactsForAnalysis, options);
+  }
+
+  async mergeContacts(
+    tenantId: string,
+    primaryId: string,
+    secondaryId: string,
+  ): Promise<Contact> {
+    const primary = await this.findById(tenantId, primaryId);
+    const secondary = await this.findById(tenantId, secondaryId);
+
+    // Merge data from secondary into primary (primary takes precedence)
+    if (!primary.phone && secondary.phone) primary.phone = secondary.phone;
+    if (!primary.title && secondary.title) primary.title = secondary.title;
+    if (!primary.linkedin && secondary.linkedin) primary.linkedin = secondary.linkedin;
+    if (!primary.companyId && secondary.companyId) primary.companyId = secondary.companyId;
+
+    // Merge custom fields
+    primary.customFields = {
+      ...secondary.customFields,
+      ...primary.customFields,
+      mergedFrom: secondary.id,
+      mergedAt: new Date().toISOString(),
+    };
+
+    // Update confidence score (merged contacts are more reliable)
+    primary.confidenceScore = Math.min(1.0, primary.confidenceScore + 0.15);
+
+    // Update activities to point to primary contact
+    await this.contactRepository.manager.query(
+      `UPDATE activities SET contact_id = $1 WHERE contact_id = $2 AND tenant_id = $3`,
+      [primaryId, secondaryId, tenantId],
+    );
+
+    // Update deals to point to primary contact
+    await this.contactRepository.manager.query(
+      `UPDATE deals SET contact_id = $1 WHERE contact_id = $2 AND tenant_id = $3`,
+      [primaryId, secondaryId, tenantId],
+    );
+
+    // Soft delete the secondary contact
+    secondary.isDeleted = true;
+    secondary.deletedAt = new Date();
+    secondary.customFields = {
+      ...secondary.customFields,
+      mergedInto: primaryId,
+      mergedAt: new Date().toISOString(),
+    };
+    await this.contactRepository.save(secondary);
+
+    // Save the primary contact with merged data
+    return this.contactRepository.save(primary);
   }
 }

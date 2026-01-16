@@ -57,9 +57,9 @@
 ## Phase 2: Intelligence (Week 3)
 
 ### AI Features
-- [ ] Test entity extraction from emails
-- [ ] Implement duplicate detection
-- [ ] Add sentiment analysis to activities
+- [x] Entity extraction from emails (extracts contacts, deals, action items)
+- [x] Implement duplicate detection (exact, fuzzy, and AI-based)
+- [x] Add sentiment analysis to activities (buying signals, risk indicators)
 - [ ] Create morning briefing generator
 
 ### Calendar Integration
@@ -112,8 +112,10 @@
 - Email sync runs every 5 minutes, calendar every 15 minutes
 - PostgreSQL runs on port 5433 (to avoid conflicts with existing installations)
 - See `technical/SETUP.md` for complete setup instructions
+- See `technical/deployment.md` for production deployment with Docker/Traefik
 - **Test Credentials:** admin@lean-demo.com / password123
 - **Seed Data:** Run `npm run seed` from packages/database (use `--force` to re-seed)
+- **AI Features:** Require ANTHROPIC_API_KEY environment variable
 
 ---
-*Last Updated: 17 January 2026 (Session 5)*
+*Last Updated: 17 January 2026 (Session 6)*
