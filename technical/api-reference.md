@@ -81,6 +81,37 @@ PATCH /contacts/:id
 DELETE /contacts/:id  # Soft delete
 ```
 
+### Detect Duplicates
+```
+GET /contacts/duplicates/detect?useAI=true&minConfidence=0.5
+
+Response: {
+  duplicates: [
+    {
+      contactId: "uuid",
+      matchedContactId: "uuid",
+      confidence: 0.95,
+      matchReasons: ["Exact email match: john@example.com"],
+      suggestedAction: "merge" | "review" | "ignore"
+    }
+  ],
+  totalAnalyzed: 150
+}
+```
+
+### Merge Contacts
+```
+POST /contacts/merge
+{
+  "primaryId": "uuid",    # Contact to keep
+  "secondaryId": "uuid"   # Contact to merge into primary
+}
+
+Response: Contact (merged primary with updated data)
+```
+
+Note: Merging reassigns all activities and deals from secondary to primary contact.
+
 ## Deals
 
 ### List Deals
@@ -204,4 +235,4 @@ GET /users
 ```
 
 ---
-*Last Updated: 16 January 2026*
+*Last Updated: 17 January 2026*
