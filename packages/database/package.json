@@ -1,0 +1,29 @@
+{
+  "name": "@invicrm/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "migrate": "typeorm migration:run -d dist/data-source.js",
+    "migrate:generate": "typeorm migration:generate -d dist/data-source.js",
+    "migrate:revert": "typeorm migration:revert -d dist/data-source.js",
+    "seed": "ts-node src/seeds/run.ts"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "pg": "^8.11.0",
+    "reflect-metadata": "^0.2.0",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.3.0"
+  }
+}
