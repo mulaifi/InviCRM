@@ -26,10 +26,10 @@
 - [x] Enable Calendar API
 - [x] Configure OAuth consent screen
 - [x] Create OAuth 2.0 credentials
-- [ ] Create Slack app at api.slack.com (Socket Mode enabled)
-- [ ] Configure Slack OAuth scopes
-- [ ] Create slash command /leancrm
-- [ ] Get Anthropic API key (optional for AI features)
+- [x] Create Slack app at api.slack.com (Socket Mode enabled)
+- [x] Configure Slack OAuth scopes
+- [x] Create slash command /leancrm
+- [x] Configure local LLM (Ollama with Qwen 2.5:7b) as alternative to Anthropic
 
 ### Database & Auth
 - [x] Run first TypeORM migration
@@ -46,12 +46,13 @@
 - [x] Test email thread association (threadId stored)
 
 ### Slack Bot
-- [ ] Create Slack app at api.slack.com with Socket Mode enabled
-- [ ] Generate App-Level Token (xapp-) with connections:write scope
-- [ ] Test OAuth installation to workspace (Socket Mode enabled for local dev)
-- [ ] Link Slack workspace to tenant
-- [ ] Test /leancrm command
-- [ ] Test contact lookup queries
+- [x] Create Slack app at api.slack.com with Socket Mode enabled
+- [x] Generate App-Level Token (xapp-) with connections:write scope
+- [x] Test Socket Mode connection to workspace
+- [x] Link Slack workspace to tenant (LEAN Sandbox → LEAN Services Demo)
+- [x] Test /leancrm command (help, brief)
+- [x] Test company lookup queries (NBK → National Bank of Kuwait)
+- [~] Test contact lookup queries
 - [ ] Test activity logging via chat
 
 ---
@@ -140,7 +141,9 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - See `technical/SECURITY-AUDIT.md` for security findings and recommendations
 - **Test Credentials:** admin@lean-demo.com / password123
 - **Seed Data:** Run `npm run seed` from packages/database (use `--force` to re-seed)
-- **AI Features:** Require ANTHROPIC_API_KEY environment variable
+- **AI Features:** Support Ollama (local) or Anthropic API (cloud)
+- **Local LLM:** Qwen 2.5:7b recommended for best JSON output
+- **AI Config:** Set AI_PROVIDER=ollama, AI_MODEL=qwen2.5:7b in .env.local
 
 ---
-*Last Updated: 17 January 2026 (Session 8)*
+*Last Updated: 17 January 2026 (Session 10)*

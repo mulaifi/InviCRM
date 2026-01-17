@@ -1,7 +1,7 @@
 import { App } from '@slack/bolt';
 import { DataSource } from 'typeorm';
-import { Contact, Deal, Activity, Task, User } from '@invicrm/database';
-import { AIClient, NaturalLanguageParser, MorningBriefingGenerator, type BriefingInput } from '@invicrm/ai-client';
+import { Contact, Deal, Activity, Task } from '@invicrm/database';
+import { AIClient, NaturalLanguageParser, MorningBriefingGenerator, type BriefingInput, type AIProvider } from '@invicrm/ai-client';
 import { SlackInstallationStore } from '../stores/installation-store';
 import { formatCurrency } from '@invicrm/shared';
 
@@ -11,13 +11,24 @@ export function registerCommands(app: App, db: DataSource) {
   const dealRepo = db.getRepository(Deal);
   const activityRepo = db.getRepository(Activity);
   const taskRepo = db.getRepository(Task);
-  const userRepo = db.getRepository(User);
 
-  // Initialize AI client if available
+  // Initialize AI client if available (supports Anthropic, Ollama, or OpenAI-compatible)
   let nlParser: NaturalLanguageParser | null = null;
   let briefingGenerator: MorningBriefingGenerator | null = null;
-  if (process.env.ANTHROPIC_API_KEY) {
-    const aiClient = new AIClient({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const aiProvider = (process.env.AI_PROVIDER || 'anthropic') as AIProvider;
+  const hasAI = aiProvider === 'ollama' ||
+    aiProvider === 'openai' ||
+    (aiProvider === 'anthropic' && process.env.ANTHROPIC_API_KEY);
+
+  if (hasAI) {
+    const aiClient = new AIClient({
+      provider: aiProvider,
+      apiKey: process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY,
+      baseUrl: process.env.AI_BASE_URL,
+      model: process.env.AI_MODEL,
+    });
+    console.log(`AI initialized: provider=${aiProvider}, model=${aiClient.getModel()}`);
     nlParser = new NaturalLanguageParser(aiClient);
     briefingGenerator = new MorningBriefingGenerator(aiClient);
   }
@@ -69,15 +80,24 @@ export function registerCommands(app: App, db: DataSource) {
     }
 
     // Parse the natural language query
+    console.log('nlParser available:', !!nlParser, 'briefingGenerator:', !!briefingGenerator);
     if (nlParser) {
       try {
         const parsed = await nlParser.parseQuery(query);
+        console.log('NL Parser result:', JSON.stringify(parsed, null, 2));
 
         switch (parsed.intent) {
           case 'contact_lookup':
             await handleContactLookup(parsed.entities.contactName || '', tenantId, respond);
             break;
+          case 'company_lookup':
+            await handleCompanyLookup(parsed.entities.companyName || '', tenantId, respond);
+            break;
+          case 'deal_status':
+            await handleDealStatus(parsed.entities.dealName || parsed.entities.companyName || '', tenantId, respond);
+            break;
           case 'deals_list':
+          case 'pipeline_overview':
             await handleDealsList(tenantId, parsed.entities.timeframe, respond);
             break;
           case 'relationship_status':
@@ -91,7 +111,7 @@ export function registerCommands(app: App, db: DataSource) {
             break;
           default:
             await respond({
-              text: `I'm not sure how to help with that. Try asking about a contact, deal, or your pipeline.`,
+              text: `I'm not sure how to help with that (intent: ${parsed.intent}). Try asking about a contact, deal, or your pipeline.`,
               response_type: 'ephemeral',
             });
         }
@@ -195,6 +215,186 @@ export function registerCommands(app: App, db: DataSource) {
         },
       });
     }
+
+    await respond({
+      blocks,
+      response_type: 'ephemeral',
+    });
+  }
+
+  // Company lookup handler
+  async function handleCompanyLookup(name: string, tenantId: string, respond: any) {
+    // Search for company by name, abbreviation, or initials
+    // Also match abbreviations like NBK -> National Bank of Kuwait
+    const searchTerm = name.toLowerCase();
+    const companies = await db.query(
+      `SELECT c.*,
+        (SELECT COUNT(*) FROM contacts WHERE company_id = c.id AND is_deleted = false) as contact_count,
+        (SELECT COUNT(*) FROM deals WHERE company_id = c.id AND is_deleted = false AND status = 'open') as deal_count,
+        (SELECT SUM(amount) FROM deals WHERE company_id = c.id AND is_deleted = false AND status = 'open') as pipeline_value
+       FROM companies c
+       WHERE c.tenant_id = $1 AND c.is_deleted = false
+       AND (
+         LOWER(c.name) LIKE $2
+         OR LOWER(c.name) LIKE $3
+         OR (
+           -- Match initials: NBK matches "National Bank of Kuwait" (skip common words)
+           LENGTH($4) >= 2 AND LENGTH($4) <= 5 AND UPPER($4) = (
+             SELECT string_agg(UPPER(LEFT(word, 1)), '')
+             FROM unnest(string_to_array(c.name, ' ')) AS word
+             WHERE word != '' AND LOWER(word) NOT IN ('of', 'the', 'and', 'for', 'in', 'at', 'to', 'a', 'an')
+           )
+         )
+       )
+       LIMIT 5`,
+      [tenantId, `%${searchTerm}%`, `${searchTerm}%`, name.toUpperCase()]
+    );
+
+    if (companies.length === 0) {
+      await respond({
+        text: `I couldn't find any companies matching "${name}".`,
+        response_type: 'ephemeral',
+      });
+      return;
+    }
+
+    const company = companies[0];
+
+    // Get recent activities for this company (via contacts)
+    const activities = await activityRepo
+      .createQueryBuilder('activity')
+      .leftJoinAndSelect('activity.contact', 'contact')
+      .where('contact.company_id = :companyId', { companyId: company.id })
+      .andWhere('activity.is_deleted = false')
+      .orderBy('activity.occurred_at', 'DESC')
+      .limit(5)
+      .getMany();
+
+    // Get open deals for this company
+    const deals = await dealRepo.find({
+      where: { companyId: company.id, tenantId, isDeleted: false, status: 'open' },
+      relations: ['stage', 'contact'],
+      order: { expectedCloseDate: 'ASC' },
+    });
+
+    const blocks: any[] = [
+      {
+        type: 'header',
+        text: {
+          type: 'plain_text',
+          text: company.name,
+        },
+      },
+      {
+        type: 'section',
+        fields: [
+          {
+            type: 'mrkdwn',
+            text: `*Industry:*\n${company.industry || 'N/A'}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Contacts:*\n${company.contact_count || 0}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Open Deals:*\n${company.deal_count || 0}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Pipeline Value:*\n${formatCurrency(company.pipeline_value || 0, 'KWD')}`,
+          },
+        ],
+      },
+    ];
+
+    if (deals.length > 0) {
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*Open Deals:*\n${deals.map(d => `• ${d.name} - ${formatCurrency(d.amount || 0, 'KWD')} (${d.stage?.name || 'Unknown'})`).join('\n')}`,
+        },
+      });
+    }
+
+    if (activities.length > 0) {
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*Recent Activity:*\n${activities.map(a => `• ${a.type}: ${a.subject} (${formatRelativeDate(a.occurredAt)})`).join('\n')}`,
+        },
+      });
+    }
+
+    await respond({
+      blocks,
+      response_type: 'ephemeral',
+    });
+  }
+
+  // Deal status handler
+  async function handleDealStatus(name: string, tenantId: string, respond: any) {
+    const deals = await dealRepo
+      .createQueryBuilder('deal')
+      .leftJoinAndSelect('deal.contact', 'contact')
+      .leftJoinAndSelect('deal.company', 'company')
+      .leftJoinAndSelect('deal.stage', 'stage')
+      .where('deal.tenant_id = :tenantId', { tenantId })
+      .andWhere('deal.is_deleted = false')
+      .andWhere('(LOWER(deal.name) LIKE :name OR LOWER(company.name) LIKE :name)', { name: `%${name.toLowerCase()}%` })
+      .limit(5)
+      .getMany();
+
+    if (deals.length === 0) {
+      await respond({
+        text: `I couldn't find any deals matching "${name}".`,
+        response_type: 'ephemeral',
+      });
+      return;
+    }
+
+    const deal = deals[0];
+
+    const blocks: any[] = [
+      {
+        type: 'header',
+        text: {
+          type: 'plain_text',
+          text: deal.name,
+        },
+      },
+      {
+        type: 'section',
+        fields: [
+          {
+            type: 'mrkdwn',
+            text: `*Value:*\n${formatCurrency(deal.amount || 0, (deal.currency as 'KWD' | 'USD' | 'AED') || 'KWD')}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Stage:*\n${deal.stage?.name || 'Unknown'}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Probability:*\n${deal.probability}%`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Expected Close:*\n${deal.expectedCloseDate ? formatRelativeDate(deal.expectedCloseDate) : 'Not set'}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Company:*\n${deal.company?.name || 'N/A'}`,
+          },
+          {
+            type: 'mrkdwn',
+            text: `*Contact:*\n${deal.contact ? `${deal.contact.firstName} ${deal.contact.lastName || ''}` : 'N/A'}`,
+          },
+        ],
+      },
+    ];
 
     await respond({
       blocks,
@@ -339,14 +539,7 @@ export function registerCommands(app: App, db: DataSource) {
     try {
       // Get user info from Slack
       const slackUserInfo = await client.users.info({ user: slackUserId });
-      const userEmail = slackUserInfo.user?.profile?.email;
-
-      // Find the user in our system (for future user-specific briefings)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const crmUser = userEmail
-        ? await userRepo.findOne({ where: { email: userEmail, tenantId, isDeleted: false } })
-        : null;
-      // TODO: Use crmUser to filter by assigned deals/contacts in future
+      // TODO: Use slackUserInfo.user?.profile?.email to find CRM user and filter by assigned deals/contacts
 
       const userName = slackUserInfo.user?.profile?.real_name || 'there';
       const timezone = slackUserInfo.user?.tz || 'Asia/Kuwait';

@@ -5,7 +5,7 @@ import { SlackInstallation } from '@invicrm/database';
 export class SlackInstallationStore {
   private repo: Repository<SlackInstallation>;
 
-  constructor(private db: DataSource) {
+  constructor(db: DataSource) {
     this.repo = db.getRepository(SlackInstallation);
   }
 

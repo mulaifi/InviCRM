@@ -142,14 +142,41 @@ SLACK_CLIENT_SECRET=your-client-secret
 SLACK_SIGNING_SECRET=your-signing-secret
 ```
 
-### Anthropic (Claude AI)
+### AI Configuration (Ollama or Anthropic)
+
+InviCRM supports multiple AI providers for NL parsing and briefing generation.
+
+#### Option 1: Ollama (Local LLM - Recommended for Development)
+
+1. Install Ollama: https://ollama.ai
+2. Pull the recommended model:
+   ```bash
+   ollama pull qwen2.5:7b
+   ```
+3. Configure `.env.local`:
+   ```
+   AI_PROVIDER=ollama
+   AI_MODEL=qwen2.5:7b
+   AI_BASE_URL=http://localhost:11434/v1
+   ```
+
+#### Option 2: Anthropic (Cloud API)
 
 1. Go to [Anthropic Console](https://console.anthropic.com)
 2. Create an API key
-3. Add to `.env.local`:
+3. Configure `.env.local`:
    ```
+   AI_PROVIDER=anthropic
    ANTHROPIC_API_KEY=sk-ant-...
    ```
+
+#### Recommended Models
+
+| Provider | Model | RAM | Best For |
+|----------|-------|-----|----------|
+| Ollama | qwen2.5:7b | ~5GB | Development, JSON output |
+| Ollama | qwen2.5:14b | ~12GB | Better quality |
+| Anthropic | claude-3-5-sonnet | Cloud | Production |
 
 ## Database Connection
 

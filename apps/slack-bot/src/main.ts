@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { config } from 'dotenv';
+import { resolve } from 'path';
 import { App, LogLevel, Installation } from '@slack/bolt';
 import { DataSource } from 'typeorm';
 import { dataSource } from '@invicrm/database';
@@ -8,7 +9,16 @@ import { registerCommands } from './commands';
 import { registerEventHandlers } from './events';
 import { registerMessageHandlers } from './messages';
 
-config();
+// Load environment variables (prefer .env.local over .env)
+// Try multiple paths to handle different working directories
+const envPaths = [
+  resolve(process.cwd(), '.env.local'),
+  resolve(process.cwd(), '../../.env.local'),
+  resolve(__dirname, '../../../.env.local'),
+];
+for (const envPath of envPaths) {
+  config({ path: envPath });
+}
 
 async function bootstrap() {
   console.log('Starting InviCRM Slack Bot...');
@@ -21,11 +31,11 @@ async function bootstrap() {
   const db = new DataSource({
     ...dataSource.options,
     host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+    port: parseInt(process.env.DATABASE_PORT || '5433', 10),
     username: process.env.DATABASE_USER || 'invicrm',
     password: process.env.DATABASE_PASSWORD || 'invicrm_dev',
     database: process.env.DATABASE_NAME || 'invicrm',
-  });
+  } as typeof dataSource.options);
 
   await db.initialize();
   console.log('Database connected');

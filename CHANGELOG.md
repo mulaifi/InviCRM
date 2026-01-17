@@ -4,6 +4,67 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - Slack Bot & Local LLM Integration (Session 10)
+
+### Accomplished
+- Created Slack app with Socket Mode enabled
+- Connected Slack bot to LEAN Sandbox workspace
+- Added local LLM support (Ollama) as alternative to Anthropic API
+- Installed and configured Qwen 2.5:7b for AI features
+- Fixed TypeScript build errors in slack-bot package
+- Implemented company lookup with abbreviation/initials matching (NBK → National Bank of Kuwait)
+- Added deal status handler for natural language queries
+- Successfully tested morning briefing generation with local LLM
+- Successfully tested company lookup queries with local LLM
+
+### Decisions
+- Use Qwen 2.5:7b as the default local LLM (best balance of JSON output quality and performance)
+- Support multiple AI providers: Anthropic, Ollama, OpenAI-compatible APIs
+- Company search matches by name, partial name, and initials (skipping common words like "of", "the")
+
+### Added/Changed
+- `packages/ai-client/src/client.ts` - Added multi-provider support (Anthropic, Ollama, OpenAI)
+- `packages/ai-client/package.json` - Added OpenAI SDK dependency
+- `apps/slack-bot/src/commands/index.ts` - Added company lookup, deal status handlers, NL parser logging
+- `apps/slack-bot/src/main.ts` - Fixed .env.local path resolution
+- `apps/slack-bot/src/events/index.ts` - Fixed unused variable warnings
+- `apps/slack-bot/src/stores/installation-store.ts` - Fixed unused property warning
+- `.env.local` - Added AI_PROVIDER, AI_MODEL, AI_BASE_URL for Ollama config
+- Database: Created slack_installations record linking workspace to tenant
+
+### Technical Details
+- Ollama endpoint: `http://localhost:11434/v1` (OpenAI-compatible)
+- Socket Mode eliminates need for public HTTPS URL during development
+- Company initials matching uses PostgreSQL string_agg with word filtering
+
+### Next Steps
+1. Test remaining Slack commands (deals list, stale contacts)
+2. Commit all changes to git
+3. Continue with WhatsApp Chrome extension (Phase 3)
+4. Address remaining P1 security items
+
+---
+
+## [17 January 2026] - Slack App Setup Preparation (Session 9)
+
+### Accomplished
+- Reviewed project status and loaded session context
+- Prepared step-by-step Slack app creation guide for user
+- Confirmed setup documentation is complete and accurate
+
+### Status
+- Awaiting user to create Slack app at api.slack.com with Socket Mode
+- All code and documentation ready for Slack bot testing
+
+### Next Steps
+1. User creates Slack app with Socket Mode enabled
+2. User obtains `xapp-` (App Token) and `xoxb-` (Bot Token)
+3. Configure `.env.local` with tokens
+4. Test Slack bot locally with `/leancrm` command
+5. Link Slack workspace to tenant in database
+
+---
+
 ## [17 January 2026] - Security Fixes & Morning Briefing (Session 8)
 
 ### Accomplished

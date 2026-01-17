@@ -1,10 +1,9 @@
 import { App } from '@slack/bolt';
 import { DataSource } from 'typeorm';
-import { SlackInstallation, User } from '@invicrm/database';
+import { SlackInstallation } from '@invicrm/database';
 
 export function registerEventHandlers(app: App, db: DataSource) {
   const installationRepo = db.getRepository(SlackInstallation);
-  const userRepo = db.getRepository(User);
 
   // Handle app home opened
   app.event('app_home_opened', async ({ event, client }) => {
@@ -75,7 +74,7 @@ export function registerEventHandlers(app: App, db: DataSource) {
   });
 
   // Handle app uninstalled
-  app.event('app_uninstalled', async ({ event, context }) => {
+  app.event('app_uninstalled', async ({ event: _event, context }) => {
     try {
       const teamId = context.teamId;
       if (teamId) {
@@ -88,7 +87,7 @@ export function registerEventHandlers(app: App, db: DataSource) {
   });
 
   // Handle tokens revoked
-  app.event('tokens_revoked', async ({ event, context }) => {
+  app.event('tokens_revoked', async ({ event: _event, context }) => {
     try {
       const teamId = context.teamId;
       if (teamId) {
