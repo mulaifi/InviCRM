@@ -74,19 +74,26 @@
 
 ## Phase 3: Expansion (Week 4)
 
-### WhatsApp Extension
-- [x] Create Chrome extension manifest
-- [x] Build content script for web.whatsapp.com
-- [x] Implement message capture
-- [x] Phone number matching to contacts
-- [x] Create WhatsApp API endpoint in NestJS
+### Onboarding API
+- [x] Build guided onboarding wizard API
+- [x] Gmail connection step endpoint
+- [x] Calendar connection step endpoint
+- [x] Slack installation step endpoint
 
-### Onboarding
-- [x] Build guided onboarding wizard
-- [x] Gmail connection step
-- [x] Calendar connection step
-- [x] Slack installation step
-- [x] WhatsApp extension prompt
+### Frontend (apps/web)
+- [x] Create Vite + React 19 + TypeScript project
+- [x] Configure Tailwind CSS v4 with LEAN brand colors
+- [x] Build shadcn/ui components (15 components)
+- [x] Implement auth pages (Login, Register, OAuth callback)
+- [x] Build onboarding wizard UI (3-step wizard)
+- [x] Create AppShell layout (Sidebar, Header)
+- [x] Implement Dashboard with AI briefing widget
+- [x] Build Contacts pages (list + detail)
+- [x] Build Deals Kanban board with drag-drop
+- [x] Create Activities timeline page
+- [x] Implement Settings pages (Profile, Integrations, Team, Company)
+- [ ] Integrate with backend API (end-to-end testing)
+- [ ] Deploy frontend to staging
 
 ---
 
@@ -115,6 +122,7 @@ See `technical/SECURITY-AUDIT.md` for full details.
 
 - [ ] Microsoft 365 integration
 - [ ] Teams bot
+- [ ] WhatsApp integration (Chrome extension or official API)
 - [ ] Arabic NLP support
 - [ ] Multi-tenant billing
 - [ ] SSO (SAML/OIDC)
@@ -145,6 +153,8 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **AI Features:** Support Ollama (local) or Anthropic API (cloud)
 - **Local LLM:** Qwen 2.5:7b recommended for best JSON output
 - **AI Config:** Set AI_PROVIDER=ollama, AI_MODEL=qwen2.5:7b in .env.local
+- **Frontend:** Start with `cd apps/web && npm run dev` (port 3001)
+- **Frontend Build:** TypeScript typecheck passes, Vite build produces 745 kB JS bundle
 
 ---
-*Last Updated: 17 January 2026 (Session 14)*
+*Last Updated: 17 January 2026 (Session 16)*

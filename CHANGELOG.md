@@ -4,6 +4,87 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - Frontend MVP Implementation (Session 16)
+
+### Accomplished
+- Implemented complete React + Vite frontend as `apps/web` in the Turborepo monorepo
+- Built full MVP: Auth, Onboarding, Dashboard, Contacts, Deals Kanban, Activities, Settings
+- Configured Tailwind CSS v4 with LEAN brand colors using `@theme` directive
+- Created 15 shadcn/ui components with LEAN brand styling
+- Implemented drag-and-drop Kanban board for deals using @dnd-kit
+- Built AI-powered Dashboard with stats, briefing, activities, and tasks widgets
+
+### Tech Stack
+- React 19 + Vite 5 + TypeScript 5.7
+- Tailwind CSS v4 with `@tailwindcss/vite` plugin (CSS-based config)
+- React Router v7 (unified `react-router` package)
+- TanStack Query v5 for server state
+- Zustand v5 for client state (auth, UI)
+- @dnd-kit for drag-and-drop Kanban
+
+### Added Files (60+ files)
+- `apps/web/` - Complete frontend application structure
+- `apps/web/src/api/` - API clients (auth, contacts, deals, dashboard, onboarding)
+- `apps/web/src/components/ui/` - 15 shadcn/ui components (Button, Card, Dialog, etc.)
+- `apps/web/src/components/layout/` - AppShell, Sidebar, Header, UserMenu
+- `apps/web/src/components/contacts/` - CreateContactDialog
+- `apps/web/src/components/deals/` - KanbanBoard, KanbanColumn, DealCard, CreateDealDialog
+- `apps/web/src/components/activities/` - ActivityTimeline
+- `apps/web/src/components/onboarding/` - OnboardingWizard, StepIndicator, GmailStep, SlackStep, WhatsAppStep
+- `apps/web/src/pages/` - All route pages (Dashboard, Contacts, Deals, Activities, Settings)
+- `apps/web/src/hooks/` - useToast, useContacts, useDeals
+- `apps/web/src/stores/` - authStore, uiStore (Zustand)
+- `apps/web/src/routes/` - ProtectedRoute, OnboardingGuard
+- `apps/web/src/styles/globals.css` - Tailwind v4 theme with LEAN brand colors
+
+### Features Implemented
+1. **Auth Flow:** Login, Register, Google OAuth callback, JWT token management
+2. **Onboarding Wizard:** 3-step wizard (Gmail, Slack, WhatsApp) with skip/complete
+3. **Dashboard:** Stats cards, AI briefing card, recent activities, upcoming tasks
+4. **Contacts:** List with search/pagination, detail page with activity timeline
+5. **Deals:** Kanban board with drag-drop, pipeline selector, create/edit dialogs
+6. **Activities:** Timeline with type filtering
+7. **Settings:** Profile, Integrations, Team, Company pages
+
+### Verification
+- TypeScript typecheck: Passes
+- Vite build: Successful (745 kB JS bundle)
+- Dev server: http://localhost:3001 with API proxy to http://localhost:3000
+
+### Decisions
+- Light mode only (dark mode deferred)
+- Premium "boutique CRM" aesthetic with LEAN brand violet (#6b459b) accent
+- CSS-based Tailwind v4 config (no tailwind.config.ts)
+
+### Next Steps
+1. Integrate frontend with backend API
+2. Test full auth flow end-to-end
+3. Deploy frontend to staging
+4. Add loading states and error handling refinements
+
+---
+
+## [17 January 2026] - Remove WhatsApp Extension (Session 15)
+
+### Accomplished
+- Removed WhatsApp Chrome extension (deferred to Phase 4)
+- Removed WhatsApp API module from NestJS API
+- Updated project documentation to reflect changes
+
+### Removed
+- `apps/whatsapp-extension/` - Entire Chrome extension directory
+- `apps/api/src/modules/whatsapp/` - WhatsApp API module (controller, service, DTOs)
+
+### Modified
+- `apps/api/src/app.module.ts` - Removed WhatsAppModule import
+- `PROJECT-TODO.md` - Moved WhatsApp integration to Phase 4
+
+### Decision
+- WhatsApp integration deferred to Phase 4 (future)
+- Will revisit with either Chrome extension approach or official WhatsApp Business API
+
+---
+
 ## [17 January 2026] - WhatsApp Extension Testing (Session 14)
 
 ### Accomplished
