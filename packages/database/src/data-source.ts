@@ -11,6 +11,7 @@ import { Activity } from './entities/activity.entity';
 import { Task } from './entities/task.entity';
 import { EmailSyncState } from './entities/email-sync-state.entity';
 import { SlackInstallation } from './entities/slack-installation.entity';
+import { OnboardingState } from './entities/onboarding-state.entity';
 
 export const dataSource = new DataSource({
   type: 'postgres',
@@ -32,6 +33,7 @@ export const dataSource = new DataSource({
     Task,
     EmailSyncState,
     SlackInstallation,
+    OnboardingState,
   ],
   migrations: [__dirname + '/migrations/*.js'],
   synchronize: false,

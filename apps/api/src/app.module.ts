@@ -10,6 +10,7 @@ import { ActivitiesModule } from './modules/activities/activities.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { HealthModule } from './modules/health/health.module';
 import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -59,6 +60,7 @@ import configuration from './config/configuration';
     ActivitiesModule,
     HealthModule,
     WhatsAppModule,
+    OnboardingModule,
   ],
 })
 export class AppModule {}

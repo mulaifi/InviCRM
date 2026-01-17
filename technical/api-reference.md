@@ -254,6 +254,91 @@ Response: {
 }
 ```
 
+## Onboarding
+
+All endpoints require: `Authorization: Bearer <token>`
+
+### Get Onboarding Status
+```
+GET /onboarding/status
+
+Response: {
+  currentStep: "gmail" | "calendar" | "slack" | "whatsapp" | "complete",
+  isComplete: false,
+  gmail: { connected: false },
+  calendar: { connected: false },
+  slack: { connected: true, connectedAt: "...", externalId: "LEAN Sandbox" },
+  whatsapp: { connected: false },
+  progressPercent: 33
+}
+```
+
+### Get Google OAuth URL
+```
+GET /onboarding/google-auth-url
+
+Response: {
+  authUrl: "https://accounts.google.com/o/oauth2/v2/auth?...",
+  state: "base64-encoded-state"
+}
+```
+
+### Get Slack Install URL
+```
+GET /onboarding/slack-install-url
+
+Response: {
+  installUrl: "https://slack.com/oauth/v2/authorize?..."
+}
+```
+
+### Get WhatsApp Extension Info
+```
+GET /onboarding/whatsapp-extension
+
+Response: {
+  chromeStoreUrl: "chrome://extensions/",
+  manualInstallUrl: "http://localhost:3001/extensions/whatsapp",
+  apiToken: "eyJ...",  // Long-lived token (365 days)
+  apiBaseUrl: "http://localhost:3000"
+}
+```
+
+### Complete Step
+```
+POST /onboarding/complete-step
+{
+  "step": "gmail" | "calendar" | "slack" | "whatsapp"
+}
+
+Response: { success: true, nextStep: "slack", message: "Step 'gmail' marked as complete" }
+```
+
+### Skip Step
+```
+POST /onboarding/skip-step
+{
+  "step": "gmail" | "calendar" | "slack" | "whatsapp",
+  "reason": "Will connect later"  // optional
+}
+
+Response: { success: true, nextStep: "slack", message: "Step 'gmail' skipped" }
+```
+
+### Skip Entire Onboarding
+```
+POST /onboarding/skip
+
+Response: { success: true, nextStep: "complete", message: "Onboarding skipped" }
+```
+
+### Reset Onboarding
+```
+POST /onboarding/reset
+
+Response: { success: true, nextStep: "gmail", message: "Onboarding reset" }
+```
+
 ## Users
 
 ### Get Current User
@@ -277,4 +362,4 @@ GET /users
 ```
 
 ---
-*Last Updated: 17 January 2026 (Session 12)*
+*Last Updated: 17 January 2026 (Session 13)*

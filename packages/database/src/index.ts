@@ -18,6 +18,7 @@ export { Task } from './entities/task.entity';
 // Integration entities
 export { EmailSyncState } from './entities/email-sync-state.entity';
 export { SlackInstallation } from './entities/slack-installation.entity';
+export { OnboardingState, OnboardingStep } from './entities/onboarding-state.entity';
 
 // Data source for migrations
 export { dataSource } from './data-source';

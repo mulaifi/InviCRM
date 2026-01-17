@@ -4,6 +4,50 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - Onboarding Wizard & WhatsApp Icons (Session 13)
+
+### Accomplished
+- Built complete onboarding wizard API module
+- Created WhatsApp extension icons (LEAN brand violet)
+- Added database migration for onboarding state tracking
+
+### Onboarding Module Features
+- **OnboardingState entity:** Tracks user progress through Gmail, Calendar, Slack, WhatsApp steps
+- **GET /onboarding/status:** Returns current step, completion percentage, and integration statuses
+- **GET /onboarding/google-auth-url:** Generates Google OAuth URL with state parameter
+- **GET /onboarding/slack-install-url:** Generates Slack OAuth installation URL
+- **GET /onboarding/whatsapp-extension:** Returns extension download info and long-lived API token
+- **POST /onboarding/complete-step:** Mark a step as complete
+- **POST /onboarding/skip-step:** Skip a step with optional reason
+- **POST /onboarding/skip:** Skip entire onboarding
+- **POST /onboarding/reset:** Reset onboarding to start over
+
+### New Files
+- `packages/database/src/entities/onboarding-state.entity.ts` - State tracking entity
+- `packages/database/src/migrations/1768652318024-AddOnboardingState.ts` - Migration
+- `apps/api/src/modules/onboarding/` - Complete module (controller, service, DTOs)
+- `apps/whatsapp-extension/src/icons/icon16.png` - 16x16 extension icon
+- `apps/whatsapp-extension/src/icons/icon48.png` - 48x48 extension icon
+- `apps/whatsapp-extension/src/icons/icon128.png` - 128x128 extension icon
+
+### Modified Files
+- `packages/database/src/index.ts` - Export OnboardingState
+- `packages/database/src/data-source.ts` - Add OnboardingState to entities
+- `apps/api/src/app.module.ts` - Import OnboardingModule
+
+### Technical Details
+- Onboarding status automatically syncs with actual integration states
+- Status endpoint checks user_integrations and slack_installations tables
+- Progress calculated as percentage of connected integrations
+- WhatsApp extension token valid for 365 days
+
+### Next Steps
+1. Test WhatsApp extension end-to-end
+2. Build frontend onboarding UI (future Phase 4)
+3. Deploy to staging for production testing
+
+---
+
 ## [17 January 2026] - WhatsApp Extension & P2 Security (Session 12)
 
 ### Accomplished

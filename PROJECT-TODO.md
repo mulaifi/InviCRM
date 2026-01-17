@@ -82,11 +82,11 @@
 - [x] Create WhatsApp API endpoint in NestJS
 
 ### Onboarding
-- [ ] Build guided onboarding wizard
-- [ ] Gmail connection step
-- [ ] Calendar connection step
-- [ ] Slack installation step
-- [ ] WhatsApp extension prompt
+- [x] Build guided onboarding wizard
+- [x] Gmail connection step
+- [x] Calendar connection step
+- [x] Slack installation step
+- [x] WhatsApp extension prompt
 
 ---
 
@@ -147,4 +147,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **AI Config:** Set AI_PROVIDER=ollama, AI_MODEL=qwen2.5:7b in .env.local
 
 ---
-*Last Updated: 17 January 2026 (Session 12)*
+*Last Updated: 17 January 2026 (Session 13)*
