@@ -104,10 +104,7 @@ export function registerCommands(app: App, db: DataSource) {
             await handleStaleContacts(tenantId, parsed.entities.timeframe || '2 weeks', respond);
             break;
           case 'activity_log':
-            await respond({
-              text: `I understood you want to log an activity. This feature is coming soon!`,
-              response_type: 'ephemeral',
-            });
+            await handleActivityLog(query, tenantId, respond);
             break;
           default:
             await respond({
@@ -653,6 +650,111 @@ export function registerCommands(app: App, db: DataSource) {
       console.error('Error generating morning briefing:', error);
       await respond({
         text: 'Sorry, I had trouble generating your briefing. Please try again.',
+        response_type: 'ephemeral',
+      });
+    }
+  }
+
+  // Activity logging handler
+  async function handleActivityLog(message: string, tenantId: string, respond: any) {
+    if (!nlParser) {
+      await respond({
+        text: 'Activity logging requires AI features. Please contact your admin to configure the AI provider.',
+        response_type: 'ephemeral',
+      });
+      return;
+    }
+
+    try {
+      // Parse the activity from natural language
+      const parsed = await nlParser.parseActivityLog(message);
+
+      if (!parsed || parsed.confidence < 0.5) {
+        await respond({
+          text: `I couldn't understand that activity log. Try something like:\n• "Just had a call with Ahmed about the cloud migration"\n• "Met with Fatima to discuss the proposal"\n• "Note: Sara mentioned they need faster delivery"`,
+          response_type: 'ephemeral',
+        });
+        return;
+      }
+
+      // Find the contact by name
+      let contact = null;
+      if (parsed.contactName) {
+        const contacts = await contactRepo
+          .createQueryBuilder('contact')
+          .leftJoinAndSelect('contact.company', 'company')
+          .where('contact.tenant_id = :tenantId', { tenantId })
+          .andWhere('contact.is_deleted = false')
+          .andWhere(
+            '(LOWER(contact.first_name) LIKE :name OR LOWER(contact.last_name) LIKE :name OR LOWER(CONCAT(contact.first_name, \' \', contact.last_name)) LIKE :fullName)',
+            {
+              name: `%${parsed.contactName.toLowerCase()}%`,
+              fullName: `%${parsed.contactName.toLowerCase()}%`,
+            },
+          )
+          .limit(1)
+          .getMany();
+
+        contact = contacts[0] || null;
+      }
+
+      // Create the activity
+      const activity = new Activity();
+      activity.tenantId = tenantId;
+      activity.type = parsed.type;
+      if (parsed.type !== 'note') {
+        activity.direction = 'outbound';
+      }
+      activity.subject = parsed.subject;
+      if (parsed.notes) {
+        activity.body = parsed.notes;
+      }
+      if (contact?.id) {
+        activity.contactId = contact.id;
+      }
+      if (parsed.duration) {
+        activity.durationMinutes = parsed.duration;
+      }
+      activity.occurredAt = new Date();
+      activity.source = 'slack';
+      activity.metadata = { slackMessage: message };
+
+      await activityRepo.save(activity);
+
+      // Update contact's lastContactedAt
+      if (contact && parsed.type !== 'note') {
+        await contactRepo.update(contact.id, { lastContactedAt: new Date() });
+      }
+
+      // Build confirmation message
+      const typeEmoji = {
+        call: ':phone:',
+        meeting: ':calendar:',
+        note: ':memo:',
+      }[parsed.type] || ':speech_balloon:';
+
+      const contactInfo = contact
+        ? `*${contact.firstName} ${contact.lastName || ''}*${contact.company ? ` (${contact.company.name})` : ''}`
+        : parsed.contactName
+          ? `_${parsed.contactName}_ (not found in CRM)`
+          : 'No contact specified';
+
+      await respond({
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `${typeEmoji} *Activity Logged*\n\n*Type:* ${parsed.type.charAt(0).toUpperCase() + parsed.type.slice(1)}\n*Contact:* ${contactInfo}\n*Subject:* ${parsed.subject}${parsed.notes ? `\n*Notes:* ${parsed.notes}` : ''}${parsed.duration ? `\n*Duration:* ${parsed.duration} minutes` : ''}`,
+            },
+          },
+        ],
+        response_type: 'ephemeral',
+      });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+      await respond({
+        text: 'Sorry, I had trouble logging that activity. Please try again.',
         response_type: 'ephemeral',
       });
     }

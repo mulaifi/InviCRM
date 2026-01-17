@@ -1,10 +1,46 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
+const DEFAULT_JWT_SECRET = 'development-secret-change-in-production';
+
+function validateEnvironment(): void {
+  const logger = new Logger('Bootstrap');
+  const isProduction = process.env.NODE_ENV === 'production';
+  const jwtSecret = process.env.JWT_SECRET;
+
+  // JWT_SECRET validation
+  if (isProduction) {
+    if (!jwtSecret) {
+      logger.error('FATAL: JWT_SECRET environment variable is required in production');
+      process.exit(1);
+    }
+    if (jwtSecret === DEFAULT_JWT_SECRET) {
+      logger.error('FATAL: JWT_SECRET cannot use the default development secret in production');
+      process.exit(1);
+    }
+    if (jwtSecret.length < 32) {
+      logger.error('FATAL: JWT_SECRET must be at least 32 characters in production');
+      process.exit(1);
+    }
+  } else {
+    if (!jwtSecret || jwtSecret === DEFAULT_JWT_SECRET) {
+      logger.warn('WARNING: Using default JWT_SECRET - do not use in production');
+    }
+  }
+
+  // ENCRYPTION_KEY validation for token encryption
+  if (isProduction && !process.env.ENCRYPTION_KEY) {
+    logger.error('FATAL: ENCRYPTION_KEY environment variable is required in production for OAuth token encryption');
+    process.exit(1);
+  }
+}
+
 async function bootstrap() {
+  // Validate critical environment variables before starting
+  validateEnvironment();
   const app = await NestFactory.create(AppModule);
 
   // Security headers

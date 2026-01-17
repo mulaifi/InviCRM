@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
+import { MergeContactsDto } from './dto/merge-contacts.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -101,8 +102,8 @@ export class ContactsController {
   @ApiOperation({ summary: 'Merge two contacts (secondary into primary)' })
   merge(
     @CurrentUser('tenantId') tenantId: string,
-    @Body() body: { primaryId: string; secondaryId: string },
+    @Body() mergeDto: MergeContactsDto,
   ) {
-    return this.contactsService.mergeContacts(tenantId, body.primaryId, body.secondaryId);
+    return this.contactsService.mergeContacts(tenantId, mergeDto.primaryId, mergeDto.secondaryId);
   }
 }

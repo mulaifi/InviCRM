@@ -4,6 +4,47 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - Security Hardening & Activity Logging (Session 11)
+
+### Accomplished
+- Implemented activity logging via Slack chat
+- Added JWT_SECRET fail-fast validation for production environments
+- Added ENCRYPTION_KEY validation for production
+- Created MergeContactsDto with UUID validation for contact merge endpoint
+- Reviewed npm audit vulnerabilities (remaining issues are in dev dependencies only)
+
+### Security Improvements
+- **JWT_SECRET Validation:** API now fails to start in production if:
+  - JWT_SECRET is not set
+  - JWT_SECRET uses the default development value
+  - JWT_SECRET is shorter than 32 characters
+- **ENCRYPTION_KEY Validation:** API requires ENCRYPTION_KEY in production
+- **UUID Validation:** Contact merge endpoint now validates UUID format in request body
+
+### New Features
+- **Activity Logging via Slack:** Users can log activities by typing natural language:
+  - "Just had a call with Ahmed about the cloud migration"
+  - "Met with Fatima to discuss the proposal"
+  - "Note: Sara mentioned they need faster delivery"
+- Activities are saved to database with contact linking and lastContactedAt update
+- **Tested and confirmed working** in LEAN Sandbox Slack workspace
+
+### Files Added
+- `apps/api/src/modules/contacts/dto/merge-contacts.dto.ts`
+
+### Files Changed
+- `apps/api/src/main.ts` - Added validateEnvironment() with security checks
+- `apps/api/src/modules/contacts/contacts.controller.ts` - Use MergeContactsDto
+- `apps/slack-bot/src/commands/index.ts` - Implemented handleActivityLog()
+- `package.json` - Added tar override attempt (dev deps remain vulnerable)
+
+### Next Steps
+1. Address P2 security items (DB_SYNCHRONIZE, OAuth redirect validation)
+2. Start WhatsApp Chrome extension (Phase 3)
+3. Test full Slack bot flow end-to-end
+
+---
+
 ## [17 January 2026] - Slack Bot & Local LLM Integration (Session 10)
 
 ### Accomplished

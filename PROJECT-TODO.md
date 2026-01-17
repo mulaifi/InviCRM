@@ -52,8 +52,8 @@
 - [x] Link Slack workspace to tenant (LEAN Sandbox → LEAN Services Demo)
 - [x] Test /leancrm command (help, brief)
 - [x] Test company lookup queries (NBK → National Bank of Kuwait)
-- [~] Test contact lookup queries
-- [ ] Test activity logging via chat
+- [x] Test contact lookup queries
+- [x] Implement activity logging via Slack chat
 
 ---
 
@@ -97,10 +97,10 @@
 - [x] Add ENCRYPTION_KEY to environment variables
 
 ### High (P1)
-- [ ] Fail fast if JWT_SECRET not set in production
-- [ ] Update npm dependencies (npm audit fix)
+- [x] Fail fast if JWT_SECRET not set in production
+- [x] Review npm dependencies (remaining vulnerabilities are in dev dependencies)
 - [x] Add @Exclude decorator to User.password field
-- [ ] Create DTO with UUID validation for contact merge endpoint
+- [x] Create DTO with UUID validation for contact merge endpoint
 
 ### Medium (P2)
 - [ ] Change DB_SYNCHRONIZE to explicit opt-in
@@ -146,4 +146,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **AI Config:** Set AI_PROVIDER=ollama, AI_MODEL=qwen2.5:7b in .env.local
 
 ---
-*Last Updated: 17 January 2026 (Session 10)*
+*Last Updated: 17 January 2026 (Session 11)*
