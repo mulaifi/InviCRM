@@ -4,6 +4,67 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - WhatsApp Extension Testing (Session 14)
+
+### Accomplished
+- Tested WhatsApp Chrome extension end-to-end
+- Fixed multiple extension configuration issues
+- Verified API endpoint connectivity
+- Confirmed DOM selectors find WhatsApp messages
+
+### What Worked
+- **Extension loading:** Loads in Chrome via `chrome://extensions/` developer mode
+- **Configuration saving:** Popup saves API URL and auth token to chrome.storage
+- **Token validation:** Background script validates JWT against `/api/v1/users/me`
+- **API connectivity:** WhatsApp API endpoints (`/whatsapp/messages`, `/whatsapp/stats`) respond correctly
+- **DOM selectors:** Updated selectors find messages (`.message-in`, `.message-out`, `header span[title]`)
+
+### What Did NOT Work
+- **Message capture:** Content script finds messages but `processMessage()` doesn't capture them
+- **Root cause:** The processing logic has a bug - messages are found by selectors but not added to `capturedMessages` Map
+- **Not fixed:** Determined not worth debugging further as WhatsApp extension is temporary/not part of final product
+
+### Fixes Applied
+1. **manifest.json:** Removed `"type": "module"` (was preventing service worker from loading)
+2. **manifest.json:** Added `alarms`, `tabs` permissions and `http://localhost:3000/*` to host_permissions
+3. **background.js:** Changed validation endpoint from `/api/v1/auth/me` to `/api/v1/users/me`
+4. **background.js:** Added null check for `chrome.alarms` API
+5. **background.js:** Added detailed console logging for debugging
+6. **popup.js:** Added try/catch error handling and console logging
+7. **content.js:** Updated DOM selectors for current WhatsApp Web structure:
+   - `MESSAGE_IN`: `.message-in` (was `[data-testid="msg-container"].message-in`)
+   - `MESSAGE_OUT`: `.message-out` (was `[data-testid="msg-container"].message-out`)
+   - `MESSAGE_TEXT`: `.copyable-text` (was `[data-testid="msg-text"]`)
+   - `MESSAGE_TIME`: `[data-pre-plain-text]` attribute
+8. **content.js:** Added `parsePrePlainText()` function for new timestamp format
+
+### Lessons Learned (IMPORTANT for Future Sessions)
+1. **WhatsApp Web DOM changes frequently** - Selectors that worked before may not work now
+2. **Chrome extension debugging:** Use Service Worker DevTools AND popup DevTools (right-click popup → Inspect)
+3. **Manifest V3 quirks:** Don't use `"type": "module"` unless background.js uses ES module imports
+4. **API endpoint naming:** The API has `/users/me` not `/auth/me` for current user info
+5. **TypeScript build cache:** Delete `tsconfig.tsbuildinfo` if builds seem stuck/empty
+6. **Token for testing:** Login returns JWT valid for 7 days, use for manual API testing
+
+### Decision
+- WhatsApp extension is **temporary tool**, not part of final product
+- Message capture bug exists but not worth fixing
+- Extension infrastructure (config, API, auth) works correctly
+- Can revisit if WhatsApp integration becomes a priority
+
+### Files Modified
+- `apps/whatsapp-extension/manifest.json`
+- `apps/whatsapp-extension/src/scripts/background.js`
+- `apps/whatsapp-extension/src/scripts/content.js`
+- `apps/whatsapp-extension/src/popup/popup.js`
+
+### Next Steps
+1. Deploy to staging for production testing
+2. Build frontend onboarding UI (Phase 4)
+3. Microsoft 365 integration (Phase 4)
+
+---
+
 ## [17 January 2026] - Onboarding Wizard & WhatsApp Icons (Session 13)
 
 ### Accomplished

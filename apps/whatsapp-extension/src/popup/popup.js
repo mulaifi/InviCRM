@@ -5,24 +5,31 @@
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  // Load saved configuration
-  const config = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
-
-  // Populate form
-  document.getElementById('apiUrl').value = config.apiUrl || '';
-  document.getElementById('authToken').value = config.authToken || '';
-  document.getElementById('enableToggle').checked = config.isEnabled || false;
-
-  // Update status display
-  updateStatus(config);
-
-  // Get status from content script
-  refreshStatus();
-
-  // Set up event listeners
+  // Set up event listeners first (so buttons work even if config fails)
   document.getElementById('saveBtn').addEventListener('click', saveConfig);
   document.getElementById('syncBtn').addEventListener('click', forceSync);
   document.getElementById('enableToggle').addEventListener('change', toggleEnabled);
+
+  try {
+    // Load saved configuration
+    const config = await chrome.runtime.sendMessage({ type: 'GET_CONFIG' });
+
+    if (config) {
+      // Populate form
+      document.getElementById('apiUrl').value = config.apiUrl || '';
+      document.getElementById('authToken').value = config.authToken || '';
+      document.getElementById('enableToggle').checked = config.isEnabled || false;
+
+      // Update status display
+      updateStatus(config);
+    }
+
+    // Get status from content script
+    refreshStatus();
+  } catch (error) {
+    console.error('Init error:', error);
+    showMessage('Extension initializing...', 'error');
+  }
 }
 
 async function saveConfig() {
@@ -40,29 +47,46 @@ async function saveConfig() {
     return;
   }
 
-  // Validate token with API
-  showMessage('Validating...', 'success');
-  const result = await chrome.runtime.sendMessage({
-    type: 'VALIDATE_TOKEN',
-    apiUrl,
-    token: authToken,
-  });
+  try {
+    // Validate token with API
+    showMessage('Validating...', 'success');
+    console.log('[Popup] Sending VALIDATE_TOKEN');
 
-  if (!result.valid) {
-    showMessage(`Invalid token: ${result.error}`, 'error');
-    return;
+    const result = await chrome.runtime.sendMessage({
+      type: 'VALIDATE_TOKEN',
+      apiUrl,
+      token: authToken,
+    });
+
+    console.log('[Popup] VALIDATE_TOKEN result:', result);
+
+    if (!result) {
+      showMessage('No response from background script', 'error');
+      return;
+    }
+
+    if (!result.valid) {
+      showMessage(`Invalid token: ${result.error || 'Unknown error'}`, 'error');
+      return;
+    }
+
+    // Save configuration
+    console.log('[Popup] Sending SAVE_CONFIG');
+    const saveResult = await chrome.runtime.sendMessage({
+      type: 'SAVE_CONFIG',
+      apiUrl,
+      authToken,
+      isEnabled,
+    });
+    console.log('[Popup] SAVE_CONFIG result:', saveResult);
+
+    showMessage(`Connected as ${result.user.email}`, 'success');
+    updateStatus({ isEnabled, isConnected: true });
+    console.log('[Popup] Config saved successfully');
+  } catch (error) {
+    console.error('[Popup] Save config error:', error);
+    showMessage(`Error: ${error.message}`, 'error');
   }
-
-  // Save configuration
-  await chrome.runtime.sendMessage({
-    type: 'SAVE_CONFIG',
-    apiUrl,
-    authToken,
-    isEnabled,
-  });
-
-  showMessage(`Connected as ${result.user.email}`, 'success');
-  updateStatus({ isEnabled, isConnected: true });
 }
 
 async function toggleEnabled(event) {

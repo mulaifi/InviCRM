@@ -70,20 +70,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * Validate authentication token with API
  */
 async function validateToken(apiUrl, token) {
+  console.log('[InviCRM] Validating token with:', apiUrl);
+
   try {
-    const response = await fetch(`${apiUrl}/api/v1/auth/me`, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    const response = await fetch(`${apiUrl}/api/v1/users/me`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
+    console.log('[InviCRM] Response status:', response.status);
 
     if (response.ok) {
       const user = await response.json();
+      console.log('[InviCRM] Token valid for:', user.email);
       return { valid: true, user };
     }
 
-    return { valid: false, error: 'Invalid token' };
+    const errorText = await response.text();
+    console.log('[InviCRM] Validation failed:', errorText);
+    return { valid: false, error: `HTTP ${response.status}: ${errorText}` };
   } catch (error) {
+    console.error('[InviCRM] Validation error:', error);
+    if (error.name === 'AbortError') {
+      return { valid: false, error: 'Request timed out - is the API running?' };
+    }
     return { valid: false, error: error.message };
   }
 }
@@ -101,9 +118,13 @@ async function notifyContentScripts(message) {
 }
 
 // Keep service worker alive with periodic alarm
-chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'keepAlive') {
-    console.log('[InviCRM] Service worker keepalive');
-  }
-});
+if (chrome.alarms) {
+  chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === 'keepAlive') {
+      console.log('[InviCRM] Service worker keepalive');
+    }
+  });
+} else {
+  console.log('[InviCRM] Alarms API not available');
+}

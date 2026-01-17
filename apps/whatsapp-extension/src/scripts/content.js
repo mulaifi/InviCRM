@@ -11,14 +11,14 @@
     SYNC_INTERVAL: 30000, // 30 seconds
     BATCH_SIZE: 50,
     SELECTORS: {
-      CHAT_LIST: '[aria-label="Chat list"]',
-      ACTIVE_CHAT: '[data-testid="conversation-panel-wrapper"]',
-      MESSAGE_IN: '[data-testid="msg-container"].message-in',
-      MESSAGE_OUT: '[data-testid="msg-container"].message-out',
-      CONTACT_NAME: '[data-testid="conversation-info-header-chat-title"]',
-      PHONE_NUMBER: '[data-testid="chat-subtitle"]',
-      MESSAGE_TEXT: '[data-testid="msg-text"] span.selectable-text',
-      MESSAGE_TIME: '[data-testid="msg-meta"] span',
+      CHAT_LIST: '[aria-label="Chat list"], #pane-side',
+      ACTIVE_CHAT: '[data-testid="conversation-panel-wrapper"], [class*="conversation"]',
+      MESSAGE_IN: '.message-in',
+      MESSAGE_OUT: '.message-out',
+      CONTACT_NAME: '[data-testid="conversation-info-header-chat-title"], header span[title]',
+      PHONE_NUMBER: '[data-testid="chat-subtitle"], header span[title] + span',
+      MESSAGE_TEXT: '.copyable-text [class*="_ao3e"], .copyable-text span.selectable-text, .copyable-text',
+      MESSAGE_TIME: '[data-pre-plain-text]',
     },
   };
 
@@ -172,13 +172,36 @@
    * Extract current chat information
    */
   function extractChatInfo() {
-    const nameEl = document.querySelector(CONFIG.SELECTORS.CONTACT_NAME);
-    const phoneEl = document.querySelector(CONFIG.SELECTORS.PHONE_NUMBER);
+    // Try multiple selectors for the contact name
+    let nameEl = document.querySelector('[data-testid="conversation-info-header-chat-title"]');
+    if (!nameEl) {
+      // Fallback: header with title attribute
+      nameEl = document.querySelector('header span[title]');
+    }
+    if (!nameEl) {
+      // Fallback: any span with dir="auto" in the header area
+      nameEl = document.querySelector('#main header span[dir="auto"]');
+    }
 
-    if (!nameEl) return null;
+    if (!nameEl) {
+      console.log('[InviCRM] Could not find contact name element');
+      return null;
+    }
 
-    const name = nameEl.textContent?.trim() || 'Unknown';
-    const phone = extractPhoneNumber(phoneEl?.textContent || name);
+    const name = nameEl.getAttribute('title') || nameEl.textContent?.trim() || 'Unknown';
+
+    // Try to find phone number
+    let phone = null;
+    const phoneEl = document.querySelector('[data-testid="chat-subtitle"]');
+    if (phoneEl) {
+      phone = extractPhoneNumber(phoneEl.textContent);
+    }
+    if (!phone) {
+      // Try extracting from name if it looks like a phone number
+      phone = extractPhoneNumber(name);
+    }
+
+    console.log('[InviCRM] Extracted chat info:', { name, phone });
 
     return {
       id: phone || name,
@@ -217,10 +240,23 @@
   function processMessage(messageEl) {
     try {
       const isIncoming = messageEl.classList.contains('message-in');
-      const textEl = messageEl.querySelector(CONFIG.SELECTORS.MESSAGE_TEXT);
-      const timeEl = messageEl.querySelector(CONFIG.SELECTORS.MESSAGE_TIME);
 
-      if (!textEl) return; // Skip non-text messages for now
+      // Find text content - try multiple selectors
+      let textEl = messageEl.querySelector('.copyable-text');
+      let messageText = '';
+
+      if (textEl) {
+        // Get text from data attribute or inner text
+        const preText = textEl.getAttribute('data-pre-plain-text');
+        if (preText) {
+          // Extract just the message, not the metadata
+          messageText = textEl.textContent?.trim() || '';
+        } else {
+          messageText = textEl.textContent?.trim() || '';
+        }
+      }
+
+      if (!messageText) return; // Skip non-text messages
 
       const messageId = generateMessageId(messageEl);
       if (state.capturedMessages.has(messageId)) return;
@@ -228,13 +264,21 @@
       const chatInfo = extractChatInfo();
       if (!chatInfo) return;
 
+      // Extract timestamp from data-pre-plain-text like "[12:17 PM, 12/18/2025] Name:"
+      let timestamp = new Date().toISOString();
+      const copyableText = messageEl.querySelector('[data-pre-plain-text]');
+      if (copyableText) {
+        const preText = copyableText.getAttribute('data-pre-plain-text');
+        timestamp = parsePrePlainText(preText) || timestamp;
+      }
+
       const message = {
         id: messageId,
         chatId: chatInfo.id,
         chatName: chatInfo.name,
         phone: chatInfo.phone,
-        text: textEl.textContent?.trim() || '',
-        timestamp: parseTimestamp(timeEl?.textContent),
+        text: messageText,
+        timestamp: timestamp,
         direction: isIncoming ? 'incoming' : 'outgoing',
         capturedAt: new Date().toISOString(),
       };
@@ -275,7 +319,50 @@
   }
 
   /**
-   * Parse WhatsApp timestamp to ISO string
+   * Parse data-pre-plain-text attribute like "[12:17 PM, 12/18/2025] Name:"
+   */
+  function parsePrePlainText(preText) {
+    if (!preText) return null;
+
+    // Match pattern: [time, date] or [time]
+    const match = preText.match(/\[(\d{1,2}:\d{2}\s*(?:AM|PM)?),?\s*(\d{1,2}\/\d{1,2}\/\d{4})?\]/i);
+    if (!match) return null;
+
+    const timeStr = match[1];
+    const dateStr = match[2];
+
+    const now = new Date();
+
+    // Parse time
+    const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1]);
+      const minutes = parseInt(timeMatch[2]);
+      const meridiem = timeMatch[3];
+
+      if (meridiem) {
+        if (meridiem.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+        if (meridiem.toUpperCase() === 'AM' && hours === 12) hours = 0;
+      }
+
+      now.setHours(hours, minutes, 0, 0);
+    }
+
+    // Parse date if present (MM/DD/YYYY format)
+    if (dateStr) {
+      const dateParts = dateStr.split('/');
+      if (dateParts.length === 3) {
+        now.setMonth(parseInt(dateParts[0]) - 1);
+        now.setDate(parseInt(dateParts[1]));
+        now.setFullYear(parseInt(dateParts[2]));
+      }
+    }
+
+    return now.toISOString();
+  }
+
+  /**
+   * Parse WhatsApp timestamp to ISO string (legacy)
    */
   function parseTimestamp(timeText) {
     if (!timeText) return new Date().toISOString();
