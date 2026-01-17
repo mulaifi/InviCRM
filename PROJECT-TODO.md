@@ -75,10 +75,11 @@
 ## Phase 3: Expansion (Week 4)
 
 ### WhatsApp Extension
-- [ ] Create Chrome extension manifest
-- [ ] Build content script for web.whatsapp.com
-- [ ] Implement message capture
-- [ ] Phone number matching to contacts
+- [x] Create Chrome extension manifest
+- [x] Build content script for web.whatsapp.com
+- [x] Implement message capture
+- [x] Phone number matching to contacts
+- [x] Create WhatsApp API endpoint in NestJS
 
 ### Onboarding
 - [ ] Build guided onboarding wizard
@@ -103,8 +104,8 @@
 - [x] Create DTO with UUID validation for contact merge endpoint
 
 ### Medium (P2)
-- [ ] Change DB_SYNCHRONIZE to explicit opt-in
-- [ ] Validate OAuth redirect URLs against allowlist
+- [x] Change DB_SYNCHRONIZE to explicit opt-in
+- [x] Validate OAuth redirect URLs against allowlist
 
 See `technical/SECURITY-AUDIT.md` for full details.
 
@@ -146,4 +147,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **AI Config:** Set AI_PROVIDER=ollama, AI_MODEL=qwen2.5:7b in .env.local
 
 ---
-*Last Updated: 17 January 2026 (Session 11)*
+*Last Updated: 17 January 2026 (Session 12)*

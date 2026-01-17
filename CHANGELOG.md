@@ -4,6 +4,53 @@ All notable changes to InviCRM.
 
 ---
 
+## [17 January 2026] - WhatsApp Extension & P2 Security (Session 12)
+
+### Accomplished
+- Completed all P2 security items
+- Built WhatsApp Chrome extension for web.whatsapp.com message capture
+- Created WhatsApp API endpoint with phone number matching
+
+### Security Fixes (P2)
+- **DB_SYNCHRONIZE:** Changed from NODE_ENV-based to explicit opt-in via `DB_SYNCHRONIZE=true`
+- **OAuth Redirect Validation:** Frontend URL now validated against CORS_ORIGINS allowlist
+
+### WhatsApp Extension Features
+- Chrome Manifest V3 extension for web.whatsapp.com
+- Content script captures messages in real-time
+- Background service worker for API communication
+- Popup UI for configuration (API URL, auth token, enable/disable)
+- Message batching and periodic sync (30-second intervals)
+
+### WhatsApp API Endpoint
+- `POST /api/v1/whatsapp/messages` - Receive messages from extension
+- `GET /api/v1/whatsapp/stats` - Get sync statistics
+- Phone number normalization (handles Kuwait +965 prefix)
+- Contact matching by phone (exact and partial) or name
+- Auto-creates contacts from unknown numbers
+- Creates activities linked to contacts
+
+### New Files
+- `apps/whatsapp-extension/manifest.json` - Chrome extension manifest
+- `apps/whatsapp-extension/src/scripts/content.js` - Message capture script
+- `apps/whatsapp-extension/src/scripts/background.js` - Service worker
+- `apps/whatsapp-extension/src/popup/popup.html` - Configuration UI
+- `apps/whatsapp-extension/src/popup/popup.js` - Popup logic
+- `apps/api/src/modules/whatsapp/` - WhatsApp module (controller, service, DTOs)
+
+### Modified Files
+- `apps/api/src/app.module.ts` - Added WhatsAppModule
+- `apps/api/src/config/configuration.ts` - Added frontend.allowedRedirects
+- `apps/api/src/modules/auth/auth.controller.ts` - Added redirect URL validation
+- `.env.example` - Added DB_SYNCHRONIZE documentation
+
+### Next Steps
+1. Build guided onboarding wizard
+2. Test WhatsApp extension end-to-end
+3. Create extension icons
+
+---
+
 ## [17 January 2026] - Security Hardening & Activity Logging (Session 11)
 
 ### Accomplished

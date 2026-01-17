@@ -212,6 +212,48 @@ POST /activities/tasks
 PATCH /activities/tasks/:id/complete
 ```
 
+## WhatsApp
+
+### Sync Messages (from Chrome Extension)
+```
+POST /whatsapp/messages
+Authorization: Bearer <token>
+
+{
+  "messages": [
+    {
+      "id": "msg_abc123",
+      "chatId": "+96512345678",
+      "chatName": "Ahmed Al-Sabah",
+      "phone": "+96512345678",
+      "text": "Looking forward to our meeting tomorrow",
+      "timestamp": "2026-01-17T10:30:00Z",
+      "direction": "incoming",
+      "capturedAt": "2026-01-17T10:30:05Z"
+    }
+  ]
+}
+
+Response: {
+  success: true,
+  processed: 5,
+  matched: 4,
+  created: 1
+}
+```
+
+### Get Sync Statistics
+```
+GET /whatsapp/stats
+Authorization: Bearer <token>
+
+Response: {
+  totalMessages: 150,
+  uniqueContacts: 25,
+  lastSyncAt: "2026-01-17T10:30:00Z"
+}
+```
+
 ## Users
 
 ### Get Current User
@@ -235,4 +277,4 @@ GET /users
 ```
 
 ---
-*Last Updated: 17 January 2026*
+*Last Updated: 17 January 2026 (Session 12)*

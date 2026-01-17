@@ -45,4 +45,12 @@ export default () => ({
   cors: {
     origins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3001'],
   },
+
+  frontend: {
+    url: process.env.FRONTEND_URL || 'http://localhost:3001',
+    // Allowed redirect URLs (defaults to CORS_ORIGINS)
+    allowedRedirects:
+      process.env.ALLOWED_REDIRECT_URLS?.split(',') ||
+      process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3001'],
+  },
 });
