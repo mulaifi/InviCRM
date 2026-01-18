@@ -4,17 +4,16 @@ import { Card, CardHeader, CardTitle, Badge, Avatar, Skeleton } from '@/componen
 import { MetricCard } from '@/components/data-display';
 import { dashboardApi } from '@/api';
 import { formatCurrency, formatRelativeTime } from '@/lib/utils';
-import type { Deal, Task, Activity } from '@/types';
 import { getDealValueAsNumber } from '@/types';
 
 export function NowView() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard', 'now'],
     queryFn: async () => {
       const response = await dashboardApi.getNow();
       return response.data;
     },
-    retry: false,
+    retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -22,26 +21,16 @@ export function NowView() {
     return <NowViewSkeleton />;
   }
 
-  // Mock data - used when API is unavailable
-  const mockData = {
-    briefing: "Good morning! You have 3 deals requiring attention today. Your pipeline value is up 12% from last week.",
-    urgentDeals: [
-      { id: '1', name: 'Enterprise SaaS Deal', value: '85000', currency: 'KWD', stageId: 'stage-1', stage: { id: 'stage-1', name: 'Negotiation', position: 3, probability: 70, isClosed: false, isWon: false }, customerId: 'cust-1', primaryContact: { id: 'c1', firstName: 'Ahmed', lastName: 'Al-Sabah', email: null }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '2', name: 'Cloud Migration Project', value: '42000', currency: 'KWD', stageId: 'stage-2', stage: { id: 'stage-2', name: 'Proposal', position: 2, probability: 50, isClosed: false, isWon: false }, customerId: 'cust-2', primaryContact: { id: 'c2', firstName: 'Sara', lastName: 'Mohammed', email: null }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ] as Deal[],
-    pendingTasks: [
-      { id: '1', title: 'Follow up with Enterprise client', priority: 'high', dueDate: new Date().toISOString(), status: 'pending', assignedToId: 'user-1', createdAt: new Date().toISOString() },
-      { id: '2', title: 'Send proposal to Cloud Migration', priority: 'medium', dueDate: new Date().toISOString(), status: 'pending', assignedToId: 'user-1', createdAt: new Date().toISOString() },
-    ] as Task[],
-    todayMeetings: [
-      { id: '1', type: 'meeting', subject: 'Discovery call with Prospect', occurredAt: new Date().toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
-    ] as Activity[],
-    recentActivities: [
-      { id: '1', type: 'email', subject: 'RE: Proposal Discussion', occurredAt: new Date(Date.now() - 3600000).toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
-    ] as Activity[],
-  };
+  if (error || !data) {
+    return (
+      <NowViewError
+        message={error instanceof Error ? error.message : 'Failed to load dashboard data'}
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
-  const displayData = data || mockData;
+  const displayData = data;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -217,6 +206,24 @@ function NowViewSkeleton() {
         <Skeleton className="h-64" />
         <Skeleton className="h-64" />
       </div>
+    </div>
+  );
+}
+
+function NowViewError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 space-y-4">
+      <AlertCircle className="h-12 w-12 text-text-muted" />
+      <div className="text-center">
+        <h3 className="text-lg font-medium text-text-primary mb-1">Unable to load dashboard</h3>
+        <p className="text-sm text-text-secondary max-w-md">{message}</p>
+      </div>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
+      >
+        Try again
+      </button>
     </div>
   );
 }

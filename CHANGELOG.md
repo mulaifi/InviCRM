@@ -4,6 +4,57 @@ All notable changes to InviCRM.
 
 ---
 
+## [19 January 2026] - Standalone Product Implementation (Session 24)
+
+### Accomplished
+- Implemented Option B: InviCRM as a Standalone Commercial Product
+- Connected frontend to InviCRM backend (reversing clik-platform integration)
+- Updated API client with JWT authentication and token refresh logic
+- Removed mock data fallbacks from zoom views and added proper error states
+- Fixed backend analytics service to return correct data format
+- Added refresh token endpoint to auth controller
+- Fixed TypeScript 5.9 decorator compatibility for Node.js 24
+
+### Decisions
+- **Standalone over Integration:** Chose Option B (standalone SaaS) over Option A (clik-platform integration)
+- **JWT over Cookies:** Frontend uses JWT tokens stored in Zustand instead of NextAuth session cookies
+- **Direct Backend Connection:** Frontend connects to InviCRM API at localhost:3000, not clik-platform
+
+### Files Changed
+
+**Frontend API Client:**
+- `apps/web/src/api/client.ts` - Changed to InviCRM API with JWT auth and token refresh
+
+**Zoom Views:**
+- `apps/web/src/features/zoom-views/NowView.tsx` - Removed mock data, added error state
+- `apps/web/src/features/zoom-views/HorizonView.tsx` - Removed mock data, added error state
+- `apps/web/src/features/zoom-views/LandscapeView.tsx` - Removed mock data, added error state
+
+**Backend Auth:**
+- `apps/api/src/modules/auth/auth.controller.ts` - Added POST /auth/refresh endpoint
+- `apps/api/src/modules/auth/auth.service.ts` - Added refreshToken(), updated login to return tenant
+
+**Backend Analytics:**
+- `apps/api/src/modules/analytics/analytics.service.ts` - Fixed mapDealToFrontend() mapping
+
+**TypeScript Config:**
+- `tsconfig.base.json` - Added useDefineForClassFields: false for TS 5.9 decorator compatibility
+
+### Technical Details
+- API base URL: `http://localhost:3000/api/v1`
+- Auth flow: Login returns `{ data: { user, tenant, accessToken, refreshToken } }`
+- Token refresh: 401 responses trigger automatic token refresh via /auth/refresh
+- Zoom views show loading skeleton then error state with retry button if API fails
+- Fixed TypeScript decorator issue caused by Node.js 24 + TS 5.9 combination
+
+### Next Steps
+1. Test full login and dashboard flow end-to-end
+2. Verify contacts and deals pages work with real data
+3. Run database migrations and seed data
+4. Deploy frontend to staging
+
+---
+
 ## [18 January 2026] - clik-platform API Integration (Session 23)
 
 ### Accomplished

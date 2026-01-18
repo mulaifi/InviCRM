@@ -29,6 +29,7 @@
     "resolveJsonModule": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "incremental": true
   },
   "exclude": ["node_modules", "dist", "coverage"]

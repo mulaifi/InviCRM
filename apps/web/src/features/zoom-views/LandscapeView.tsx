@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Target, TrendingUp, Layers } from 'lucide-react';
+import { Target, TrendingUp, Layers, AlertCircle } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -17,13 +17,13 @@ import { dashboardApi } from '@/api';
 import { formatCurrency } from '@/lib/utils';
 
 export function LandscapeView() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard', 'landscape'],
     queryFn: async () => {
       const response = await dashboardApi.getLandscape();
       return response.data;
     },
-    retry: false,
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -31,30 +31,16 @@ export function LandscapeView() {
     return <LandscapeViewSkeleton />;
   }
 
-  // Mock data - used when API is unavailable
-  const mockData = {
-    quarterlyForecast: 2850000,
-    pipelineHealth: {
-      total: 3200000,
-      weighted: 1850000,
-      averageDealSize: 45000,
-      averageCycleTime: 28,
-    },
-    stageConversion: [
-      { from: 'Lead', to: 'Discovery', rate: 45 },
-      { from: 'Discovery', to: 'Proposal', rate: 62 },
-      { from: 'Proposal', to: 'Negotiation', rate: 55 },
-      { from: 'Negotiation', to: 'Closed Won', rate: 68 },
-    ],
-    trends: [
-      { date: 'Oct', newDeals: 12, closedValue: 180000 },
-      { date: 'Nov', newDeals: 15, closedValue: 220000 },
-      { date: 'Dec', newDeals: 18, closedValue: 195000 },
-      { date: 'Jan', newDeals: 22, closedValue: 280000 },
-    ],
-  };
+  if (error || !data) {
+    return (
+      <LandscapeViewError
+        message={error instanceof Error ? error.message : 'Failed to load dashboard data'}
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
-  const displayData = data || mockData;
+  const displayData = data;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -293,6 +279,24 @@ function LandscapeViewSkeleton() {
         <Skeleton className="h-64" />
         <Skeleton className="h-64" />
       </div>
+    </div>
+  );
+}
+
+function LandscapeViewError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 space-y-4">
+      <AlertCircle className="h-12 w-12 text-text-muted" />
+      <div className="text-center">
+        <h3 className="text-lg font-medium text-text-primary mb-1">Unable to load quarterly view</h3>
+        <p className="text-sm text-text-secondary max-w-md">{message}</p>
+      </div>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
+      >
+        Try again
+      </button>
     </div>
   );
 }

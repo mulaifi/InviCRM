@@ -4,26 +4,41 @@ import { Repository, Between, LessThanOrEqual } from 'typeorm';
 import { Deal, Activity, Task, Pipeline, Stage } from '@invicrm/database';
 import { ConfigService } from '@nestjs/config';
 
-// Map Deal entity to frontend format
+// Map Deal entity to frontend format (InviCRM native schema)
 function mapDealToFrontend(deal: Deal) {
   return {
     id: deal.id,
-    title: deal.name, // name -> title
-    value: deal.amount || 0, // amount -> value
+    name: deal.name,
+    value: deal.amount?.toString() || null, // Convert to string for frontend compatibility
     currency: deal.currency,
     stageId: deal.stageId,
-    stage: deal.stage,
+    stage: deal.stage ? {
+      id: deal.stage.id,
+      name: deal.stage.name,
+      probability: deal.stage.probability,
+      position: deal.stage.position,
+      isClosed: deal.stage.type !== 'open', // 'won' or 'lost' = closed
+      isWon: deal.stage.type === 'won',
+    } : undefined,
     pipelineId: deal.pipelineId,
     pipeline: deal.pipeline,
-    contact: deal.contact,
-    contactId: deal.contactId,
-    company: deal.company,
-    companyId: deal.companyId,
+    primaryContact: deal.contact ? {
+      id: deal.contact.id,
+      firstName: deal.contact.firstName,
+      lastName: deal.contact.lastName,
+      email: deal.contact.email,
+    } : null,
+    primaryContactId: deal.contactId,
+    customerId: deal.companyId, // Map to customerId for frontend
+    customer: deal.company ? {
+      id: deal.company.id,
+      name: deal.company.name,
+    } : undefined,
     ownerId: deal.ownerId,
     owner: deal.owner,
     probability: deal.probability,
-    expectedCloseDate: deal.expectedCloseDate?.toISOString(),
-    closedAt: deal.closedAt?.toISOString(),
+    expectedCloseDate: deal.expectedCloseDate?.toISOString() || null,
+    actualCloseDate: deal.closedAt?.toISOString() || null,
     status: deal.status,
     createdAt: deal.createdAt.toISOString(),
     updatedAt: deal.updatedAt.toISOString(),

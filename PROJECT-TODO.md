@@ -107,13 +107,17 @@
 - [ ] Create Activities timeline page
 - [ ] Implement Settings pages (Profile, Integrations, Team, Company)
 
-### clik-platform Integration
-- [x] Update types to match clik-platform schema (Deal, Contact, Stage)
-- [x] Update API clients for clik-platform endpoints
-- [x] Configure Vite proxy for /crm base path
-- [x] Add NextAuth session cookie support
-- [ ] Test end-to-end login flow
-- [ ] Verify data loading from clik-platform
+### InviCRM Standalone Product (Option B)
+- [x] Revert clik-platform integration - connect to InviCRM backend
+- [x] Update API client with JWT authentication
+- [x] Add token refresh logic to API client
+- [x] Remove mock data fallbacks from zoom views
+- [x] Add proper error states to zoom views
+- [x] Fix backend analytics service mapping
+- [x] Add POST /auth/refresh endpoint
+- [x] Fix TypeScript 5.9 decorator compatibility
+- [ ] Test end-to-end login and dashboard flow
+- [ ] Deploy frontend to staging
 
 ---
 
@@ -178,4 +182,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **Keyboard Shortcuts:** Cmd+K (command bar), Cmd+1/2/3 (zoom levels)
 
 ---
-*Last Updated: 18 January 2026 (Session 23)*
+*Last Updated: 19 January 2026 (Session 24)*

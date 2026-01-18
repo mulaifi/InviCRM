@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { TrendingUp, Calendar, DollarSign, AlertCircle } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -13,17 +13,16 @@ import { Card, CardHeader, CardTitle, Badge, Skeleton } from '@/components/ui';
 import { MetricCard } from '@/components/data-display';
 import { dashboardApi } from '@/api';
 import { formatCurrency } from '@/lib/utils';
-import type { Deal, Activity } from '@/types';
 import { getDealValueAsNumber } from '@/types';
 
 export function HorizonView() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['dashboard', 'horizon'],
     queryFn: async () => {
       const response = await dashboardApi.getHorizon();
       return response.data;
     },
-    retry: false,
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -31,32 +30,16 @@ export function HorizonView() {
     return <HorizonViewSkeleton />;
   }
 
-  // Mock data - used when API is unavailable
-  const mockData = {
-    weeklyDeals: [
-      { id: '1', name: 'Enterprise Deal', value: '85000', currency: 'KWD', stageId: 'stage-1', stage: { id: 'stage-1', name: 'Negotiation', position: 3, probability: 70, isClosed: false, isWon: false }, customerId: 'cust-1', expectedCloseDate: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '2', name: 'Mid-Market Deal', value: '35000', currency: 'KWD', stageId: 'stage-2', stage: { id: 'stage-2', name: 'Proposal', position: 2, probability: 50, isClosed: false, isWon: false }, customerId: 'cust-2', expectedCloseDate: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '3', name: 'SMB Deal', value: '12000', currency: 'KWD', stageId: 'stage-3', stage: { id: 'stage-3', name: 'Discovery', position: 1, probability: 30, isClosed: false, isWon: false }, customerId: 'cust-3', expectedCloseDate: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-    ] as Deal[],
-    upcomingMeetings: [
-      { id: '1', type: 'meeting', subject: 'Quarterly Review', occurredAt: new Date(Date.now() + 86400000).toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
-      { id: '2', type: 'meeting', subject: 'Product Demo', occurredAt: new Date(Date.now() + 172800000).toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
-    ] as Activity[],
-    dealsByStage: [
-      { stage: 'Discovery', count: 8, value: 120000 },
-      { stage: 'Proposal', count: 5, value: 180000 },
-      { stage: 'Negotiation', count: 3, value: 250000 },
-      { stage: 'Closing', count: 2, value: 95000 },
-    ],
-    weeklyMetrics: {
-      newDeals: 5,
-      closedWon: 2,
-      closedLost: 1,
-      totalValue: 645000,
-    },
-  };
+  if (error || !data) {
+    return (
+      <HorizonViewError
+        message={error instanceof Error ? error.message : 'Failed to load dashboard data'}
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
-  const displayData = data || mockData;
+  const displayData = data;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -235,6 +218,24 @@ function HorizonViewSkeleton() {
         <Skeleton className="h-80" />
       </div>
       <Skeleton className="h-64" />
+    </div>
+  );
+}
+
+function HorizonViewError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 space-y-4">
+      <AlertCircle className="h-12 w-12 text-text-muted" />
+      <div className="text-center">
+        <h3 className="text-lg font-medium text-text-primary mb-1">Unable to load weekly view</h3>
+        <p className="text-sm text-text-secondary max-w-md">{message}</p>
+      </div>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors"
+      >
+        Try again
+      </button>
     </div>
   );
 }

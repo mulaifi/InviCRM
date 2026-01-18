@@ -67,11 +67,42 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Get tenant details
+    const tenant = await this.tenantsService.findById(user.tenantId);
+
     const tokens = await this.generateTokens(user);
     return {
-      user: this.sanitizeUser(user),
-      ...tokens,
+      data: {
+        user: this.sanitizeUser(user),
+        tenant: tenant ? { id: tenant.id, name: tenant.name, settings: tenant.settings || {} } : null,
+        ...tokens,
+      },
     };
+  }
+
+  async refreshToken(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const user = await this.usersService.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const tokens = await this.generateTokens(user);
+      return {
+        data: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
+      };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 
   async validateGoogleUser(profile: {
@@ -122,11 +153,15 @@ export class AuthService {
       role: user.role,
     };
 
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, type: 'refresh' },
+      { expiresIn: '7d' },
+    );
 
     return {
       accessToken,
-      expiresIn: '7d',
+      refreshToken,
     };
   }
 
