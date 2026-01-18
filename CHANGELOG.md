@@ -4,6 +4,128 @@ All notable changes to InviCRM.
 
 ---
 
+## [18 January 2026] - Ambient Dashboard Implementation (Session 18)
+
+### Accomplished
+- Complete frontend rewrite with revolutionary "Ambient Dashboard" design
+- Implemented Zoom Paradigm: NOW (today), HORIZON (week), LANDSCAPE (quarter) views
+- Built Command Bar with cmdk library (Cmd+K to open)
+- Created Report Builder system with 8 chart/visualization components
+- Upgraded to Tailwind CSS v4 with CSS-first `@theme` configuration
+- Upgraded React to 19.2 (latest with Activity API)
+- Fixed dashboard to gracefully fall back to mock data when API unavailable
+
+### Technology Stack Updates
+- **React 19.2** (up from 19.0) - latest with Activity API, useEffectEvent
+- **Tailwind CSS v4** - CSS-first configuration using `@theme` directive
+- **@tailwindcss/vite** - Integrated Vite plugin (removed postcss.config.js)
+- **cmdk 1.0.4** - Command palette library
+- **Framer Motion 11** - GPU-accelerated zoom transitions
+- **Recharts 2** - Charts for dashboard visualizations
+
+### Features Implemented
+
+**Zoom Views:**
+- NowView: AI briefing, urgent deals, pending tasks, today's meetings, recent activities
+- HorizonView: Weekly metrics, pipeline by stage chart, deals closing this week
+- LandscapeView: Quarterly forecast, revenue trends, conversion funnel, pipeline health score
+
+**Command Bar:**
+- View commands: Today, This Week, Pipeline, Quarter, Contacts, Activities, Settings
+- Action commands: New Deal, New Contact, New Task
+- AI fallback for report generation queries
+
+**Report Builder:**
+- 8 components: MetricCard, BarChart, PieChart, TrendLine, Table, List, Heatmap, Funnel
+- ReportCanvas with animated grid layout
+- AI-generated report structure support
+
+**Theming System:**
+- Mist theme (default): Calm, ambient palette
+- Ocean theme: Deeper blues
+- Dawn theme: Warm neutrals
+- Runtime theme switching via CSS variables
+
+### Files Added/Changed (70+ files restructured)
+- `apps/web/src/styles/themes/` - Theme definitions (mist, ocean, dawn)
+- `apps/web/src/styles/globals.css` - Tailwind v4 CSS-first config with @theme
+- `apps/web/src/stores/zoomStore.ts` - Zoom level state machine
+- `apps/web/src/stores/commandStore.ts` - Command bar state
+- `apps/web/src/stores/themeStore.ts` - Theme switching
+- `apps/web/src/features/command-bar/` - Command bar with cmdk
+- `apps/web/src/features/zoom-views/` - NowView, HorizonView, LandscapeView
+- `apps/web/src/features/report-builder/` - Report components and canvas
+- `apps/web/src/components/layout/AmbientShell.tsx` - New minimal shell
+- `apps/web/src/components/layout/ZoomContainer.tsx` - Framer Motion zoom
+- `apps/web/src/hooks/useKeyboardShortcuts.ts` - Cmd+1/2/3, Cmd+K
+- `apps/web/src/hooks/useZoom.ts` - Zoom gesture handling
+- `apps/web/package.json` - Updated dependencies
+- `apps/web/vite.config.ts` - @tailwindcss/vite integration
+- Removed: `tailwind.config.ts`, `postcss.config.js` (Tailwind v4 doesn't need them)
+
+### Keyboard Shortcuts
+- `Cmd+K` - Open command bar
+- `Cmd+1` - Switch to NOW (today) view
+- `Cmd+2` - Switch to HORIZON (week) view
+- `Cmd+3` - Switch to LANDSCAPE (quarter) view
+- `Cmd++/-` - Zoom in/out
+
+### Decisions
+- "Invisible CRM" philosophy: Minimal chrome, content-focused design
+- Views use mock data when API unavailable (graceful degradation)
+- No traditional navigation sidebar; everything via command bar
+- Tailwind v4 CSS-first config eliminates config files
+
+### Next Steps
+1. Connect dashboard views to real API endpoints
+2. Implement report generation with AI
+3. Add mobile responsiveness and touch gestures
+4. Deploy to staging for user testing
+
+---
+
+## [17 January 2026] - Frontend-Backend Integration Fixes (Session 17)
+
+### Accomplished
+- Fixed API base URL mismatch between frontend and backend
+- Fixed auth response mapping (backend returns `accessToken`, frontend expected `token`)
+- Fixed onboarding API response structure mismatch
+- Fixed onboarding endpoint paths (`/onboarding/google-auth-url`, `/onboarding/slack-install-url`, `/onboarding/skip`)
+- Attempted frontend design enhancement but deferred for later work
+
+### Technical Fixes
+
+**API Version Prefix:**
+- Frontend was calling `/api/...` but backend uses `/api/v1/...`
+- Fixed `apps/web/src/api/client.ts` to use `${API_URL}/api/v1` as baseURL
+
+**Auth Response Mapping:**
+- Backend returns `{ accessToken, expiresIn, user }` but frontend expected `{ token, user }`
+- Added `ApiAuthResponse` interface and `mapAuthResponse()` function in `apps/web/src/api/auth.ts`
+- Applied mapping to login, register, and OAuth callback functions
+
+**Onboarding API Mismatch:**
+- Backend returns `{ gmail: { connected: false }, slack: { connected: true }, ... }`
+- Frontend expected `{ steps: { gmail: boolean, slack: boolean, ... } }`
+- Added `ApiOnboardingStatus` interface and `mapOnboardingStatus()` in `apps/web/src/api/onboarding.ts`
+- Fixed endpoint paths to match actual backend routes
+
+### Modified Files
+- `apps/web/src/api/client.ts` - Fixed API base URL to include `/v1` prefix
+- `apps/web/src/api/auth.ts` - Added response mapping for accessToken → token
+- `apps/web/src/api/onboarding.ts` - Fixed interfaces and endpoint paths
+
+### Deferred
+- Frontend design improvements (user requested to work on this later)
+- Current design uses small centered cards, needs full-page layouts
+
+### Next Steps
+1. Redesign frontend with full-page layouts and better visual hierarchy
+2. Complete end-to-end testing with backend
+3. Deploy frontend to staging
+
+---
+
 ## [17 January 2026] - Frontend MVP Implementation (Session 16)
 
 ### Accomplished

@@ -1,95 +1,62 @@
-import { apiClient } from './client';
-
-export interface Contact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  title: string | null;
-  company: {
-    id: string;
-    name: string;
-  } | null;
-  source: string;
-  lastContactedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ContactDetail extends Contact {
-  notes: string | null;
-  linkedInUrl: string | null;
-  activities: Activity[];
-  deals: DealSummary[];
-}
-
-export interface Activity {
-  id: string;
-  type: 'email' | 'call' | 'meeting' | 'note' | 'task';
-  subject: string;
-  description: string | null;
-  occurredAt: string;
-  direction: 'inbound' | 'outbound' | null;
-}
-
-export interface DealSummary {
-  id: string;
-  title: string;
-  value: number;
-  currency: string;
-  stage: string;
-  probability: number;
-}
-
-export interface ContactsListParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  companyId?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+import { apiClient, type ApiResponse, type PaginatedResponse } from './client';
+import type { Contact, Company } from '@/types';
 
 export interface CreateContactRequest {
   firstName: string;
   lastName: string;
   email?: string;
   phone?: string;
-  title?: string;
   companyId?: string;
-  notes?: string;
-  linkedInUrl?: string;
+  title?: string;
+  source?: string;
+}
+
+export interface UpdateContactRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  companyId?: string;
+  title?: string;
 }
 
 export const contactsApi = {
-  list: async (params?: ContactsListParams): Promise<PaginatedResponse<Contact>> => {
-    const response = await apiClient.get<PaginatedResponse<Contact>>('/contacts', { params });
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    companyId?: string;
+  }): Promise<PaginatedResponse<Contact>> => {
+    const response = await apiClient.get<PaginatedResponse<Contact>>(
+      '/contacts',
+      { params }
+    );
     return response.data;
   },
 
-  get: async (id: string): Promise<ContactDetail> => {
-    const response = await apiClient.get<ContactDetail>(`/contacts/${id}`);
+  get: async (id: string): Promise<ApiResponse<Contact>> => {
+    const response = await apiClient.get<ApiResponse<Contact>>(
+      `/contacts/${id}`
+    );
     return response.data;
   },
 
-  create: async (data: CreateContactRequest): Promise<Contact> => {
-    const response = await apiClient.post<Contact>('/contacts', data);
+  create: async (data: CreateContactRequest): Promise<ApiResponse<Contact>> => {
+    const response = await apiClient.post<ApiResponse<Contact>>(
+      '/contacts',
+      data
+    );
     return response.data;
   },
 
-  update: async (id: string, data: Partial<CreateContactRequest>): Promise<Contact> => {
-    const response = await apiClient.patch<Contact>(`/contacts/${id}`, data);
+  update: async (
+    id: string,
+    data: UpdateContactRequest
+  ): Promise<ApiResponse<Contact>> => {
+    const response = await apiClient.patch<ApiResponse<Contact>>(
+      `/contacts/${id}`,
+      data
+    );
     return response.data;
   },
 
@@ -97,8 +64,44 @@ export const contactsApi = {
     await apiClient.delete(`/contacts/${id}`);
   },
 
-  getActivities: async (id: string): Promise<Activity[]> => {
-    const response = await apiClient.get<Activity[]>(`/contacts/${id}/activities`);
+  search: async (query: string): Promise<ApiResponse<Contact[]>> => {
+    const response = await apiClient.get<ApiResponse<Contact[]>>(
+      '/contacts/search',
+      { params: { q: query } }
+    );
+    return response.data;
+  },
+};
+
+export const companiesApi = {
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<Company>> => {
+    const response = await apiClient.get<PaginatedResponse<Company>>(
+      '/companies',
+      { params }
+    );
+    return response.data;
+  },
+
+  get: async (id: string): Promise<ApiResponse<Company>> => {
+    const response = await apiClient.get<ApiResponse<Company>>(
+      `/companies/${id}`
+    );
+    return response.data;
+  },
+
+  create: async (data: {
+    name: string;
+    domain?: string;
+    industry?: string;
+  }): Promise<ApiResponse<Company>> => {
+    const response = await apiClient.post<ApiResponse<Company>>(
+      '/companies',
+      data
+    );
     return response.data;
   },
 };

@@ -1,4 +1,5 @@
-import { apiClient } from './client';
+import { apiClient, type ApiResponse } from './client';
+import type { User, Tenant } from '@/types';
 
 export interface LoginRequest {
   email: string;
@@ -14,41 +15,28 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    tenantId: string;
-    onboardingCompleted: boolean;
-  };
-}
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  tenantId: string;
-  onboardingCompleted: boolean;
+  user: User;
+  tenant: Tenant;
+  accessToken: string;
+  refreshToken: string;
 }
 
 export const authApi = {
-  login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/login', data);
+  login: async (data: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
+    const response = await apiClient.post<ApiResponse<AuthResponse>>(
+      '/auth/login',
+      data
+    );
     return response.data;
   },
 
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/register', data);
-    return response.data;
-  },
-
-  me: async (): Promise<User> => {
-    const response = await apiClient.get<User>('/auth/me');
+  register: async (
+    data: RegisterRequest
+  ): Promise<ApiResponse<AuthResponse>> => {
+    const response = await apiClient.post<ApiResponse<AuthResponse>>(
+      '/auth/register',
+      data
+    );
     return response.data;
   },
 
@@ -56,29 +44,19 @@ export const authApi = {
     await apiClient.post('/auth/logout');
   },
 
-  refreshToken: async (): Promise<{ token: string }> => {
-    const response = await apiClient.post<{ token: string }>('/auth/refresh');
+  me: async (): Promise<ApiResponse<{ user: User; tenant: Tenant }>> => {
+    const response = await apiClient.get<
+      ApiResponse<{ user: User; tenant: Tenant }>
+    >('/auth/me');
     return response.data;
   },
 
-  // OAuth methods
-  getGoogleAuthUrl: async (): Promise<{ url: string }> => {
-    const response = await apiClient.get<{ url: string }>('/auth/google');
-    return response.data;
-  },
-
-  handleGoogleCallback: async (code: string): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/google/callback', { code });
-    return response.data;
-  },
-
-  getSlackAuthUrl: async (): Promise<{ url: string }> => {
-    const response = await apiClient.get<{ url: string }>('/auth/slack');
-    return response.data;
-  },
-
-  handleSlackCallback: async (code: string): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/slack/callback', { code });
+  refresh: async (
+    refreshToken: string
+  ): Promise<ApiResponse<{ accessToken: string; refreshToken: string }>> => {
+    const response = await apiClient.post<
+      ApiResponse<{ accessToken: string; refreshToken: string }>
+    >('/auth/refresh', { refreshToken });
     return response.data;
   },
 };

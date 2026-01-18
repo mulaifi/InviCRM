@@ -80,20 +80,28 @@
 - [x] Calendar connection step endpoint
 - [x] Slack installation step endpoint
 
-### Frontend (apps/web)
-- [x] Create Vite + React 19 + TypeScript project
-- [x] Configure Tailwind CSS v4 with LEAN brand colors
-- [x] Build shadcn/ui components (15 components)
-- [x] Implement auth pages (Login, Register, OAuth callback)
-- [x] Build onboarding wizard UI (3-step wizard)
-- [x] Create AppShell layout (Sidebar, Header)
-- [x] Implement Dashboard with AI briefing widget
-- [x] Build Contacts pages (list + detail)
-- [x] Build Deals Kanban board with drag-drop
-- [x] Create Activities timeline page
-- [x] Implement Settings pages (Profile, Integrations, Team, Company)
-- [ ] Integrate with backend API (end-to-end testing)
+### Frontend - Ambient Dashboard (apps/web)
+- [x] Create Vite + React 19.2 + TypeScript project
+- [x] Configure Tailwind CSS v4 with CSS-first @theme configuration
+- [x] Build theming system (Mist, Ocean, Dawn themes)
+- [x] Implement Zoom Paradigm (NOW/HORIZON/LANDSCAPE views)
+- [x] Build Command Bar with cmdk (Cmd+K)
+- [x] Create NowView (today's priorities, briefing, tasks)
+- [x] Create HorizonView (weekly pipeline, charts)
+- [x] Create LandscapeView (quarterly forecast, funnel)
+- [x] Build Report Builder with 8 components
+- [x] Implement keyboard shortcuts (Cmd+1/2/3, Cmd+K)
+- [x] Add mock data fallback when API unavailable
+- [~] Connect to real API endpoints
+- [ ] Implement AI report generation
+- [ ] Add mobile responsiveness
 - [ ] Deploy frontend to staging
+
+### Frontend - Legacy Features (to migrate)
+- [ ] Build Contacts pages (list + detail)
+- [ ] Build Deals Kanban board with drag-drop
+- [ ] Create Activities timeline page
+- [ ] Implement Settings pages (Profile, Integrations, Team, Company)
 
 ---
 
@@ -154,7 +162,8 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **Local LLM:** Qwen 2.5:7b recommended for best JSON output
 - **AI Config:** Set AI_PROVIDER=ollama, AI_MODEL=qwen2.5:7b in .env.local
 - **Frontend:** Start with `cd apps/web && npm run dev` (port 3001)
-- **Frontend Build:** TypeScript typecheck passes, Vite build produces 745 kB JS bundle
+- **Frontend Stack:** React 19.2, Tailwind v4, Framer Motion, cmdk, Recharts
+- **Keyboard Shortcuts:** Cmd+K (command bar), Cmd+1/2/3 (zoom levels)
 
 ---
-*Last Updated: 17 January 2026 (Session 16)*
+*Last Updated: 18 January 2026 (Session 18)*

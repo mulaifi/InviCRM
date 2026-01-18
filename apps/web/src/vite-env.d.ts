@@ -2,8 +2,6 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string;
-  readonly VITE_GOOGLE_REDIRECT_URI: string;
-  readonly VITE_SLACK_REDIRECT_URI: string;
 }
 
 interface ImportMeta {

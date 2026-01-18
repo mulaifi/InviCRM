@@ -1,102 +1,69 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { authApi, type User, type LoginRequest, type RegisterRequest, type AuthResponse } from '@/api/auth';
+import { persist } from 'zustand/middleware';
+import type { User, Tenant } from '@/types';
 
 interface AuthState {
-  token: string | null;
   user: User | null;
+  tenant: Tenant | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 
   // Actions
-  setAuth: (response: AuthResponse) => void;
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  setAuth: (data: {
+    user: User;
+    tenant: Tenant;
+    accessToken: string;
+    refreshToken: string;
+  }) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  setLoading: (isLoading: boolean) => void;
   logout: () => void;
-  fetchUser: () => Promise<void>;
-  updateUser: (user: Partial<User>) => void;
-  setOnboardingCompleted: (completed: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
-      token: null,
+    (set) => ({
       user: null,
+      tenant: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true,
 
-      setAuth: (response: AuthResponse) => {
+      setAuth: (data) =>
         set({
-          token: response.token,
-          user: response.user,
+          user: data.user,
+          tenant: data.tenant,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
           isAuthenticated: true,
-        });
-      },
+          isLoading: false,
+        }),
 
-      login: async (data: LoginRequest) => {
-        set({ isLoading: true });
-        try {
-          const response = await authApi.login(data);
-          get().setAuth(response);
-        } finally {
-          set({ isLoading: false });
-        }
-      },
+      setTokens: (accessToken, refreshToken) =>
+        set({ accessToken, refreshToken }),
 
-      register: async (data: RegisterRequest) => {
-        set({ isLoading: true });
-        try {
-          const response = await authApi.register(data);
-          get().setAuth(response);
-        } finally {
-          set({ isLoading: false });
-        }
-      },
+      setLoading: (isLoading) => set({ isLoading }),
 
-      logout: () => {
+      logout: () =>
         set({
-          token: null,
           user: null,
+          tenant: null,
+          accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
-        });
-      },
-
-      fetchUser: async () => {
-        const { token } = get();
-        if (!token) return;
-
-        set({ isLoading: true });
-        try {
-          const user = await authApi.me();
-          set({ user, isAuthenticated: true });
-        } catch {
-          get().logout();
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      updateUser: (userData: Partial<User>) => {
-        const { user } = get();
-        if (user) {
-          set({ user: { ...user, ...userData } });
-        }
-      },
-
-      setOnboardingCompleted: (completed: boolean) => {
-        const { user } = get();
-        if (user) {
-          set({ user: { ...user, onboardingCompleted: completed } });
-        }
-      },
+          isLoading: false,
+        }),
     }),
     {
       name: 'invicrm-auth',
-      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        token: state.token,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         user: state.user,
+        tenant: state.tenant,
         isAuthenticated: state.isAuthenticated,
       }),
     }
