@@ -1,107 +1,120 @@
-import { apiClient, type ApiResponse, type PaginatedResponse } from './client';
-import type { Contact, Company } from '@/types';
+import { apiClient, type PaginatedResponse, transformPagination } from './client';
+import type { Contact, Customer } from '@/types';
 
 export interface CreateContactRequest {
+  customerId: string;
   firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  companyId?: string;
-  title?: string;
-  source?: string;
-}
-
-export interface UpdateContactRequest {
-  firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
-  companyId?: string;
+  mobile?: string;
   title?: string;
+  department?: string;
+  isPrimary?: boolean;
+  isDecisionMaker?: boolean;
+  notes?: string;
+}
+
+export interface UpdateContactRequest {
+  customerId?: string;
+  firstName?: string;
+  lastName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  title?: string | null;
+  department?: string | null;
+  isPrimary?: boolean;
+  isDecisionMaker?: boolean;
+  notes?: string | null;
 }
 
 export const contactsApi = {
   list: async (params?: {
     page?: number;
-    limit?: number;
+    pageSize?: number;
     search?: string;
-    companyId?: string;
-  }): Promise<PaginatedResponse<Contact>> => {
-    const response = await apiClient.get<PaginatedResponse<Contact>>(
-      '/contacts',
-      { params }
-    );
-    return response.data;
+    customerId?: string;
+  }) => {
+    const response = await apiClient.get<PaginatedResponse<Contact>>('/contacts', {
+      params: {
+        page: params?.page,
+        pageSize: params?.pageSize,
+        search: params?.search,
+        customerId: params?.customerId,
+      },
+    });
+    return transformPagination(response.data);
   },
 
-  get: async (id: string): Promise<ApiResponse<Contact>> => {
-    const response = await apiClient.get<ApiResponse<Contact>>(
-      `/contacts/${id}`
-    );
-    return response.data;
+  get: async (id: string) => {
+    const response = await apiClient.get<Contact>(`/contacts/${id}`);
+    return { data: response.data };
   },
 
-  create: async (data: CreateContactRequest): Promise<ApiResponse<Contact>> => {
-    const response = await apiClient.post<ApiResponse<Contact>>(
-      '/contacts',
-      data
-    );
-    return response.data;
+  create: async (data: CreateContactRequest) => {
+    const response = await apiClient.post<Contact>('/contacts', data);
+    return { data: response.data };
   },
 
-  update: async (
-    id: string,
-    data: UpdateContactRequest
-  ): Promise<ApiResponse<Contact>> => {
-    const response = await apiClient.patch<ApiResponse<Contact>>(
-      `/contacts/${id}`,
-      data
-    );
-    return response.data;
+  update: async (id: string, data: UpdateContactRequest) => {
+    const response = await apiClient.patch<Contact>(`/contacts/${id}`, data);
+    return { data: response.data };
   },
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/contacts/${id}`);
   },
-
-  search: async (query: string): Promise<ApiResponse<Contact[]>> => {
-    const response = await apiClient.get<ApiResponse<Contact[]>>(
-      '/contacts/search',
-      { params: { q: query } }
-    );
-    return response.data;
-  },
 };
 
-export const companiesApi = {
+// Customers API (clik-platform calls companies "customers")
+export const customersApi = {
   list: async (params?: {
     page?: number;
-    limit?: number;
+    pageSize?: number;
     search?: string;
-  }): Promise<PaginatedResponse<Company>> => {
-    const response = await apiClient.get<PaginatedResponse<Company>>(
-      '/companies',
-      { params }
-    );
-    return response.data;
+    status?: string;
+    size?: string;
+  }) => {
+    const response = await apiClient.get<PaginatedResponse<Customer>>('/companies', {
+      params: {
+        page: params?.page,
+        pageSize: params?.pageSize,
+        search: params?.search,
+        status: params?.status,
+        size: params?.size,
+      },
+    });
+    return transformPagination(response.data);
   },
 
-  get: async (id: string): Promise<ApiResponse<Company>> => {
-    const response = await apiClient.get<ApiResponse<Company>>(
-      `/companies/${id}`
-    );
-    return response.data;
+  get: async (id: string) => {
+    const response = await apiClient.get<Customer>(`/companies/${id}`);
+    return { data: response.data };
   },
 
   create: async (data: {
     name: string;
     domain?: string;
-    industry?: string;
-  }): Promise<ApiResponse<Company>> => {
-    const response = await apiClient.post<ApiResponse<Company>>(
-      '/companies',
-      data
-    );
+    vertical?: string;
+    size?: string;
+    salesStatus?: string;
+    phone?: string;
+    website?: string;
+    source?: string;
+    notes?: string;
+  }) => {
+    const response = await apiClient.post<Customer>('/companies', data);
+    return { data: response.data };
+  },
+
+  search: async (query: string) => {
+    const response = await apiClient.get<{ data: Customer[] }>('/companies/search', {
+      params: { q: query },
+    });
     return response.data;
   },
 };
+
+// Alias for backward compatibility
+export const companiesApi = customersApi;

@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
-import { DashboardPage, ContactsPage, LoginPage, RegisterPage } from '@/pages';
+import { DashboardPage, ContactsPage, DealsPage, LoginPage, RegisterPage } from '@/pages';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +77,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ContactsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/deals"
+            element={
+              <ProtectedRoute>
+                <DealsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/deals/:id"
+            element={
+              <ProtectedRoute>
+                <DealsPage />
               </ProtectedRoute>
             }
           />

@@ -94,8 +94,7 @@ export function CommandBar() {
               navigate('/settings');
               break;
             case 'VIEW:PIPELINE':
-              setLevel('now');
-              navigate('/');
+              navigate('/deals');
               break;
             default:
               navigate('/');
@@ -166,6 +165,9 @@ export function CommandBar() {
             break;
           case 'VIEW:SETTINGS':
             navigate('/settings');
+            break;
+          case 'VIEW:PIPELINE':
+            navigate('/deals');
             break;
           default:
             navigate('/');

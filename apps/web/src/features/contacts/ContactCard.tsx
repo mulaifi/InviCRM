@@ -9,14 +9,6 @@ export interface ContactCardProps {
   isSelected?: boolean;
 }
 
-const sourceColors: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
-  gmail: 'default',
-  calendar: 'success',
-  slack: 'warning',
-  manual: 'default',
-  whatsapp: 'success',
-};
-
 export function ContactCard({ contact, onClick, isSelected }: ContactCardProps) {
   return (
     <Card
@@ -30,7 +22,7 @@ export function ContactCard({ contact, onClick, isSelected }: ContactCardProps) 
       <div className="flex items-start gap-3">
         <Avatar
           firstName={contact.firstName}
-          lastName={contact.lastName}
+          lastName={contact.lastName || undefined}
           size="md"
         />
 
@@ -39,14 +31,18 @@ export function ContactCard({ contact, onClick, isSelected }: ContactCardProps) 
             <h3 className="font-medium text-text-primary truncate">
               {contact.firstName} {contact.lastName}
             </h3>
-            {contact.source && (
-              <Badge
-                size="sm"
-                variant={sourceColors[contact.source] || 'default'}
-              >
-                {contact.source}
-              </Badge>
-            )}
+            <div className="flex items-center gap-1">
+              {contact.isPrimary && (
+                <Badge size="sm" variant="success">
+                  Primary
+                </Badge>
+              )}
+              {contact.isDecisionMaker && (
+                <Badge size="sm" variant="warning">
+                  DM
+                </Badge>
+              )}
+            </div>
           </div>
 
           {contact.title && (
@@ -56,10 +52,10 @@ export function ContactCard({ contact, onClick, isSelected }: ContactCardProps) 
           )}
 
           <div className="mt-2 space-y-1">
-            {contact.company && (
+            {contact.customer && (
               <div className="flex items-center gap-1.5 text-xs text-text-muted">
                 <Building2 className="h-3.5 w-3.5" />
-                <span className="truncate">{contact.company.name}</span>
+                <span className="truncate">{contact.customer.name}</span>
               </div>
             )}
 

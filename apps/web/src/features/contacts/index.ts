@@ -13,8 +13,9 @@ export {
   useCreateContact,
   useUpdateContact,
   useDeleteContact,
-  useContactSearch,
-  useCompaniesList,
+  useCustomersList,
+  useCompaniesList, // Legacy alias
   contactsKeys,
-  companiesKeys,
+  customersKeys,
+  companiesKeys, // Legacy alias
 } from './useContacts';

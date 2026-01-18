@@ -4,6 +4,36 @@ All notable changes to InviCRM.
 
 ---
 
+## [18 January 2026] - clik-platform API Integration (Session 23)
+
+### Accomplished
+- Fixed API proxy configuration to connect InviCRM frontend to clik-platform backend
+- Updated Vite proxy to rewrite `/api` requests to `/crm/api` (clik-platform's base path)
+- Added cookie domain rewriting for cross-port session sharing
+- Configured auth redirect to clik-platform's NextAuth signin page
+
+### Decisions
+- InviCRM frontend consumes clik-platform CRM API instead of InviCRM backend
+- API authentication uses NextAuth session cookies from clik-platform
+- On 401 errors, users are redirected to clik-platform login with callback URL
+
+### Files Changed
+- `apps/web/vite.config.ts` - Added path rewrite (`/api` → `/crm/api`), cookie domain rewriting, auth proxy
+- `apps/web/src/api/client.ts` - Changed 401 redirect to `/crm/api/auth/signin` with callback URL
+
+### Technical Details
+- Vite proxy rewrites: `/api/pipeline-stages` → `http://localhost:3002/crm/api/pipeline-stages`
+- `cookieDomainRewrite: 'localhost'` enables cookie sharing between ports 3001 and 3002
+- NextAuth callback URL preserves user's location for post-login redirect
+
+### Next Steps
+1. Test end-to-end login flow between InviCRM and clik-platform
+2. Verify deals, contacts, and activities load from clik-platform
+3. Complete Deals Kanban board implementation
+4. Test drag-and-drop functionality with real data
+
+---
+
 ## [18 January 2026] - Contacts Feature Implementation (Session 22)
 
 ### Accomplished

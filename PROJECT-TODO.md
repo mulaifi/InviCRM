@@ -103,9 +103,17 @@
 
 ### Frontend - Additional Pages
 - [x] Build Contacts pages (list + detail + create/edit)
-- [ ] Build Deals Kanban board with drag-drop
+- [~] Build Deals Kanban board with drag-drop (clik-platform integration in progress)
 - [ ] Create Activities timeline page
 - [ ] Implement Settings pages (Profile, Integrations, Team, Company)
+
+### clik-platform Integration
+- [x] Update types to match clik-platform schema (Deal, Contact, Stage)
+- [x] Update API clients for clik-platform endpoints
+- [x] Configure Vite proxy for /crm base path
+- [x] Add NextAuth session cookie support
+- [ ] Test end-to-end login flow
+- [ ] Verify data loading from clik-platform
 
 ---
 
@@ -170,4 +178,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **Keyboard Shortcuts:** Cmd+K (command bar), Cmd+1/2/3 (zoom levels)
 
 ---
-*Last Updated: 18 January 2026 (Session 22)*
+*Last Updated: 18 January 2026 (Session 23)*

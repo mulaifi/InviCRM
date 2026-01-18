@@ -1,34 +1,54 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { contactsApi, companiesApi } from '@/api/contacts';
+import { contactsApi, customersApi } from '@/api/contacts';
 import type { CreateContactRequest, UpdateContactRequest } from '@/api/contacts';
 
 // Query keys for cache management
 export const contactsKeys = {
   all: ['contacts'] as const,
   lists: () => [...contactsKeys.all, 'list'] as const,
-  list: (params: { search?: string; companyId?: string; page?: number }) =>
+  list: (params: { search?: string; customerId?: string; page?: number }) =>
     [...contactsKeys.lists(), params] as const,
   details: () => [...contactsKeys.all, 'detail'] as const,
   detail: (id: string) => [...contactsKeys.details(), id] as const,
 };
 
-export const companiesKeys = {
-  all: ['companies'] as const,
-  lists: () => [...companiesKeys.all, 'list'] as const,
+export const customersKeys = {
+  all: ['customers'] as const,
+  lists: () => [...customersKeys.all, 'list'] as const,
   list: (params?: { search?: string; page?: number }) =>
-    [...companiesKeys.lists(), params] as const,
+    [...customersKeys.lists(), params] as const,
 };
 
+// Legacy alias
+export const companiesKeys = customersKeys;
+
 // List contacts with pagination and filters
-export function useContactsList(params: {
+export function useContactsList(params?: {
   search?: string;
-  companyId?: string;
+  customerId?: string;
   page?: number;
+  pageSize?: number;
+  // Legacy param name - maps to customerId
+  companyId?: string;
+  // Legacy param name - maps to pageSize
   limit?: number;
 }) {
+  const customerId = params?.customerId || params?.companyId;
+  const pageSize = params?.pageSize || params?.limit;
+
   return useQuery({
-    queryKey: contactsKeys.list(params),
-    queryFn: () => contactsApi.list(params),
+    queryKey: contactsKeys.list({
+      search: params?.search,
+      customerId,
+      page: params?.page,
+    }),
+    queryFn: () =>
+      contactsApi.list({
+        search: params?.search,
+        customerId,
+        page: params?.page,
+        pageSize,
+      }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
@@ -85,21 +105,18 @@ export function useDeleteContact() {
   });
 }
 
-// Search contacts (for autocomplete)
-export function useContactSearch(query: string) {
+// List customers (for select dropdown)
+export function useCustomersList(params?: {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}) {
   return useQuery({
-    queryKey: [...contactsKeys.all, 'search', query] as const,
-    queryFn: () => contactsApi.search(query),
-    enabled: query.length >= 2,
-    staleTime: 1000 * 30, // 30 seconds
-  });
-}
-
-// List companies (for select dropdown)
-export function useCompaniesList(params?: { search?: string; page?: number }) {
-  return useQuery({
-    queryKey: companiesKeys.list(params),
-    queryFn: () => companiesApi.list(params),
+    queryKey: customersKeys.list(params),
+    queryFn: () => customersApi.list(params),
     staleTime: 1000 * 60 * 5,
   });
 }
+
+// Legacy alias
+export const useCompaniesList = useCustomersList;

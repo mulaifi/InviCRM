@@ -14,8 +14,16 @@ export default defineConfig({
     port: 3001,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3002',
         changeOrigin: true,
+        rewrite: (path) => `/crm${path}`,
+        cookieDomainRewrite: 'localhost',
+      },
+      // Proxy auth endpoints so cookies work correctly
+      '/crm/api/auth': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+        cookieDomainRewrite: 'localhost',
       },
     },
   },

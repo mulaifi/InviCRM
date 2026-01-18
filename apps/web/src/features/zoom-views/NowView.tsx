@@ -5,6 +5,7 @@ import { MetricCard } from '@/components/data-display';
 import { dashboardApi } from '@/api';
 import { formatCurrency, formatRelativeTime } from '@/lib/utils';
 import type { Deal, Task, Activity } from '@/types';
+import { getDealValueAsNumber } from '@/types';
 
 export function NowView() {
   const { data, isLoading } = useQuery({
@@ -25,18 +26,18 @@ export function NowView() {
   const mockData = {
     briefing: "Good morning! You have 3 deals requiring attention today. Your pipeline value is up 12% from last week.",
     urgentDeals: [
-      { id: '1', title: 'Enterprise SaaS Deal', value: 85000, currency: 'KWD', stage: { name: 'Negotiation' }, contact: { firstName: 'Ahmed', lastName: 'Al-Sabah' } },
-      { id: '2', title: 'Cloud Migration Project', value: 42000, currency: 'KWD', stage: { name: 'Proposal' }, contact: { firstName: 'Sara', lastName: 'Mohammed' } },
+      { id: '1', name: 'Enterprise SaaS Deal', value: '85000', currency: 'KWD', stageId: 'stage-1', stage: { id: 'stage-1', name: 'Negotiation', position: 3, probability: 70, isClosed: false, isWon: false }, customerId: 'cust-1', primaryContact: { id: 'c1', firstName: 'Ahmed', lastName: 'Al-Sabah', email: null }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: '2', name: 'Cloud Migration Project', value: '42000', currency: 'KWD', stageId: 'stage-2', stage: { id: 'stage-2', name: 'Proposal', position: 2, probability: 50, isClosed: false, isWon: false }, customerId: 'cust-2', primaryContact: { id: 'c2', firstName: 'Sara', lastName: 'Mohammed', email: null }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ] as Deal[],
     pendingTasks: [
-      { id: '1', title: 'Follow up with Enterprise client', priority: 'high', dueDate: new Date().toISOString() },
-      { id: '2', title: 'Send proposal to Cloud Migration', priority: 'medium', dueDate: new Date().toISOString() },
+      { id: '1', title: 'Follow up with Enterprise client', priority: 'high', dueDate: new Date().toISOString(), status: 'pending', assignedToId: 'user-1', createdAt: new Date().toISOString() },
+      { id: '2', title: 'Send proposal to Cloud Migration', priority: 'medium', dueDate: new Date().toISOString(), status: 'pending', assignedToId: 'user-1', createdAt: new Date().toISOString() },
     ] as Task[],
     todayMeetings: [
-      { id: '1', type: 'meeting', subject: 'Discovery call with Prospect', occurredAt: new Date().toISOString() },
+      { id: '1', type: 'meeting', subject: 'Discovery call with Prospect', occurredAt: new Date().toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
     ] as Activity[],
     recentActivities: [
-      { id: '1', type: 'email', subject: 'RE: Proposal Discussion', occurredAt: new Date(Date.now() - 3600000).toISOString(), contact: { firstName: 'Ahmed', lastName: 'Al-Sabah' } },
+      { id: '1', type: 'email', subject: 'RE: Proposal Discussion', occurredAt: new Date(Date.now() - 3600000).toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
     ] as Activity[],
   };
 
@@ -89,22 +90,22 @@ export function NowView() {
               >
                 <div className="flex items-center gap-3">
                   <Avatar
-                    firstName={deal.contact?.firstName || 'U'}
-                    lastName={deal.contact?.lastName || 'U'}
+                    firstName={deal.primaryContact?.firstName || 'U'}
+                    lastName={deal.primaryContact?.lastName || undefined}
                     size="sm"
                   />
                   <div>
                     <p className="text-sm font-medium text-text-primary">
-                      {deal.title}
+                      {deal.name}
                     </p>
                     <p className="text-xs text-text-secondary">
-                      {deal.contact?.firstName} {deal.contact?.lastName}
+                      {deal.primaryContact?.firstName} {deal.primaryContact?.lastName}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-text-primary">
-                    {formatCurrency(deal.value, deal.currency)}
+                    {formatCurrency(getDealValueAsNumber(deal), deal.currency)}
                   </p>
                   <Badge size="sm" variant="warning">
                     {deal.stage?.name}
@@ -182,7 +183,7 @@ export function NowView() {
               <div className="flex items-center gap-3">
                 <Avatar
                   firstName={activity.contact?.firstName || 'U'}
-                  lastName={activity.contact?.lastName || 'U'}
+                  lastName={activity.contact?.lastName || undefined}
                   size="sm"
                 />
                 <div>

@@ -14,6 +14,7 @@ import { MetricCard } from '@/components/data-display';
 import { dashboardApi } from '@/api';
 import { formatCurrency } from '@/lib/utils';
 import type { Deal, Activity } from '@/types';
+import { getDealValueAsNumber } from '@/types';
 
 export function HorizonView() {
   const { data, isLoading } = useQuery({
@@ -33,13 +34,13 @@ export function HorizonView() {
   // Mock data - used when API is unavailable
   const mockData = {
     weeklyDeals: [
-      { id: '1', title: 'Enterprise Deal', value: 85000, currency: 'KWD', stage: { name: 'Negotiation' }, expectedCloseDate: new Date().toISOString() },
-      { id: '2', title: 'Mid-Market Deal', value: 35000, currency: 'KWD', stage: { name: 'Proposal' }, expectedCloseDate: new Date().toISOString() },
-      { id: '3', title: 'SMB Deal', value: 12000, currency: 'KWD', stage: { name: 'Discovery' }, expectedCloseDate: new Date().toISOString() },
+      { id: '1', name: 'Enterprise Deal', value: '85000', currency: 'KWD', stageId: 'stage-1', stage: { id: 'stage-1', name: 'Negotiation', position: 3, probability: 70, isClosed: false, isWon: false }, customerId: 'cust-1', expectedCloseDate: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: '2', name: 'Mid-Market Deal', value: '35000', currency: 'KWD', stageId: 'stage-2', stage: { id: 'stage-2', name: 'Proposal', position: 2, probability: 50, isClosed: false, isWon: false }, customerId: 'cust-2', expectedCloseDate: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      { id: '3', name: 'SMB Deal', value: '12000', currency: 'KWD', stageId: 'stage-3', stage: { id: 'stage-3', name: 'Discovery', position: 1, probability: 30, isClosed: false, isWon: false }, customerId: 'cust-3', expectedCloseDate: new Date().toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     ] as Deal[],
     upcomingMeetings: [
-      { id: '1', type: 'meeting', subject: 'Quarterly Review', occurredAt: new Date(Date.now() + 86400000).toISOString() },
-      { id: '2', type: 'meeting', subject: 'Product Demo', occurredAt: new Date(Date.now() + 172800000).toISOString() },
+      { id: '1', type: 'meeting', subject: 'Quarterly Review', occurredAt: new Date(Date.now() + 86400000).toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
+      { id: '2', type: 'meeting', subject: 'Product Demo', occurredAt: new Date(Date.now() + 172800000).toISOString(), userId: 'user-1', createdAt: new Date().toISOString() },
     ] as Activity[],
     dealsByStage: [
       { stage: 'Discovery', count: 8, value: 120000 },
@@ -190,7 +191,7 @@ export function HorizonView() {
                 >
                   <td className="py-3 px-4">
                     <p className="text-sm font-medium text-text-primary">
-                      {deal.title}
+                      {deal.name}
                     </p>
                   </td>
                   <td className="py-3 px-4">
@@ -198,7 +199,7 @@ export function HorizonView() {
                   </td>
                   <td className="py-3 px-4 text-right">
                     <p className="text-sm font-medium text-text-primary">
-                      {formatCurrency(deal.value, deal.currency)}
+                      {formatCurrency(getDealValueAsNumber(deal), deal.currency)}
                     </p>
                   </td>
                   <td className="py-3 px-4 text-right">

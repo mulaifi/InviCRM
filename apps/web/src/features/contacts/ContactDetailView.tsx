@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Mail,
   Phone,
@@ -13,59 +14,12 @@ import { SlideOver, Avatar, Badge, Button, Card, Skeleton } from '@/components/u
 import { useContact, useDeleteContact } from './useContacts';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Contact, Activity, Deal } from '@/types';
-import { useState } from 'react';
 
 export interface ContactDetailViewProps {
   contactId: string | null;
   onClose: () => void;
   onEdit: (contact: Contact) => void;
 }
-
-// Mock activities for demo
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    type: 'email',
-    subject: 'RE: Proposal Follow-up',
-    occurredAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    userId: '1',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    type: 'meeting',
-    subject: 'Discovery Call',
-    occurredAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    userId: '1',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    type: 'note',
-    subject: 'Discussed pricing options',
-    occurredAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    userId: '1',
-    createdAt: new Date().toISOString(),
-  },
-];
-
-// Mock deals for demo
-const mockDeals: Deal[] = [
-  {
-    id: '1',
-    title: 'Enterprise License',
-    value: 25000,
-    currency: 'KWD',
-    stageId: '1',
-    stage: { id: '1', name: 'Proposal', order: 3, probability: 50, pipelineId: '1' },
-    pipelineId: '1',
-    ownerId: '1',
-    probability: 50,
-    status: 'open',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
 
 const activityIcons: Record<string, typeof Mail> = {
   email: Mail,
@@ -86,8 +40,9 @@ export function ContactDetailView({
   const deleteContact = useDeleteContact();
 
   const contact = data?.data;
-  const activities = mockActivities;
-  const deals = mockDeals;
+  // TODO: Fetch activities and deals from API when endpoints are available
+  const activities: Activity[] = [];
+  const deals: Deal[] = [];
 
   const handleDelete = async () => {
     if (!contactId) return;
@@ -120,7 +75,7 @@ export function ContactDetailView({
     <SlideOver
       isOpen={!!contactId}
       onClose={onClose}
-      title={contact ? `${contact.firstName} ${contact.lastName}` : 'Contact'}
+      title={contact ? `${contact.firstName} ${contact.lastName || ''}`.trim() : 'Contact'}
       width="lg"
       footer={footer}
     >
@@ -142,7 +97,7 @@ export function ContactDetailView({
           <div className="flex items-start gap-4">
             <Avatar
               firstName={contact.firstName}
-              lastName={contact.lastName}
+              lastName={contact.lastName || undefined}
               size="lg"
             />
             <div className="flex-1">
@@ -152,11 +107,14 @@ export function ContactDetailView({
               {contact.title && (
                 <p className="text-sm text-text-secondary">{contact.title}</p>
               )}
-              {contact.source && (
-                <Badge size="sm" className="mt-2">
-                  via {contact.source}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2 mt-2">
+                {contact.isPrimary && (
+                  <Badge size="sm" variant="success">Primary</Badge>
+                )}
+                {contact.isDecisionMaker && (
+                  <Badge size="sm" variant="warning">Decision Maker</Badge>
+                )}
+              </div>
             </div>
           </div>
 
@@ -188,11 +146,30 @@ export function ContactDetailView({
                   </a>
                 </div>
               )}
-              {contact.company && (
+              {contact.mobile && (
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-text-muted" />
+                  <a
+                    href={`tel:${contact.mobile}`}
+                    className="text-sm text-text-primary hover:text-accent"
+                  >
+                    {contact.mobile} (Mobile)
+                  </a>
+                </div>
+              )}
+              {contact.customer && (
                 <div className="flex items-center gap-3">
                   <Building2 className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-primary">
-                    {contact.company.name}
+                    {contact.customer.name}
+                  </span>
+                </div>
+              )}
+              {contact.department && (
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-4 w-4 text-text-muted" />
+                  <span className="text-sm text-text-secondary">
+                    {contact.department}
                   </span>
                 </div>
               )}
@@ -202,7 +179,7 @@ export function ContactDetailView({
           {/* Related Deals */}
           <Card>
             <h3 className="text-sm font-medium text-text-secondary mb-3">
-              Related Deals
+              Related Deals ({contact.dealCount || 0})
             </h3>
             {deals.length > 0 ? (
               <div className="space-y-2">
@@ -214,12 +191,12 @@ export function ContactDetailView({
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-success" />
                       <span className="text-sm font-medium text-text-primary">
-                        {deal.title}
+                        {deal.name}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text-primary">
-                        {deal.value.toLocaleString()} {deal.currency}
+                        {deal.value} {deal.currency}
                       </span>
                       <Badge size="sm" variant="warning">
                         {deal.stage?.name}
@@ -264,12 +241,22 @@ export function ContactDetailView({
             )}
           </Card>
 
+          {/* Notes */}
+          {contact.notes && (
+            <Card>
+              <h3 className="text-sm font-medium text-text-secondary mb-2">
+                Notes
+              </h3>
+              <p className="text-sm text-text-primary whitespace-pre-wrap">
+                {contact.notes}
+              </p>
+            </Card>
+          )}
+
           {/* Metadata */}
           <div className="text-xs text-text-muted space-y-1">
             <p>Added {formatRelativeTime(contact.createdAt)}</p>
-            {contact.lastContactedAt && (
-              <p>Last contacted {formatRelativeTime(contact.lastContactedAt)}</p>
-            )}
+            <p>Last updated {formatRelativeTime(contact.updatedAt)}</p>
           </div>
 
           {/* Delete confirmation overlay */}
