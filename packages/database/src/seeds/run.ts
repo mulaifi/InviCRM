@@ -285,6 +285,8 @@ async function seedWithForce() {
     await queryRunner.query(`DELETE FROM stages WHERE tenant_id = $1`, [tenantData.id]);
     await queryRunner.query(`DELETE FROM pipelines WHERE tenant_id = $1`, [tenantData.id]);
     await queryRunner.query(`DELETE FROM user_integrations WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1)`, [tenantData.id]);
+    await queryRunner.query(`DELETE FROM onboarding_states WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1)`, [tenantData.id]);
+    await queryRunner.query(`DELETE FROM slack_installations WHERE tenant_id = $1`, [tenantData.id]);
     await queryRunner.query(`DELETE FROM users WHERE tenant_id = $1`, [tenantData.id]);
     await queryRunner.query(`DELETE FROM tenants WHERE id = $1`, [tenantData.id]);
 

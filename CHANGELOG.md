@@ -14,6 +14,10 @@ All notable changes to InviCRM.
 - Fixed backend analytics service to return correct data format
 - Added refresh token endpoint to auth controller
 - Fixed TypeScript 5.9 decorator compatibility for Node.js 24
+- Fixed seed script to handle foreign key constraints (onboarding_states, slack_installations)
+- Fixed pagination format mismatch between frontend and InviCRM API
+- Added logout button to the AmbientShell header
+- Successfully seeded database with 8 contacts, 5 deals, 6 companies
 
 ### Decisions
 - **Standalone over Integration:** Chose Option B (standalone SaaS) over Option A (clik-platform integration)
@@ -23,7 +27,10 @@ All notable changes to InviCRM.
 ### Files Changed
 
 **Frontend API Client:**
-- `apps/web/src/api/client.ts` - Changed to InviCRM API with JWT auth and token refresh
+- `apps/web/src/api/client.ts` - InviCRM API with JWT auth, token refresh, fixed pagination format
+
+**Frontend Layout:**
+- `apps/web/src/components/layout/AmbientShell.tsx` - Added logout button to header
 
 **Zoom Views:**
 - `apps/web/src/features/zoom-views/NowView.tsx` - Removed mock data, added error state
@@ -37,21 +44,23 @@ All notable changes to InviCRM.
 **Backend Analytics:**
 - `apps/api/src/modules/analytics/analytics.service.ts` - Fixed mapDealToFrontend() mapping
 
-**TypeScript Config:**
+**Database:**
+- `packages/database/src/seeds/run.ts` - Fixed force mode to delete onboarding_states and slack_installations
 - `tsconfig.base.json` - Added useDefineForClassFields: false for TS 5.9 decorator compatibility
 
 ### Technical Details
 - API base URL: `http://localhost:3000/api/v1`
 - Auth flow: Login returns `{ data: { user, tenant, accessToken, refreshToken } }`
 - Token refresh: 401 responses trigger automatic token refresh via /auth/refresh
+- Pagination: API returns `{ data, total, page, limit }`, frontend transforms to add totalPages
 - Zoom views show loading skeleton then error state with retry button if API fails
 - Fixed TypeScript decorator issue caused by Node.js 24 + TS 5.9 combination
 
 ### Next Steps
-1. Test full login and dashboard flow end-to-end
-2. Verify contacts and deals pages work with real data
-3. Run database migrations and seed data
-4. Deploy frontend to staging
+1. Test contacts and deals pages with real data
+2. Fix any remaining API response format mismatches
+3. Deploy frontend to staging
+4. Build remaining pages (Activities, Settings)
 
 ---
 

@@ -116,7 +116,10 @@
 - [x] Fix backend analytics service mapping
 - [x] Add POST /auth/refresh endpoint
 - [x] Fix TypeScript 5.9 decorator compatibility
-- [ ] Test end-to-end login and dashboard flow
+- [x] Fix pagination format mismatch (transformPagination function)
+- [x] Fix seed script foreign key constraints (onboarding_states, slack_installations)
+- [x] Add logout button to AmbientShell header
+- [~] Test end-to-end login and dashboard flow
 - [ ] Deploy frontend to staging
 
 ---

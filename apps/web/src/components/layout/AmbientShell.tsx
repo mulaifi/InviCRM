@@ -1,8 +1,9 @@
 import { type ReactNode } from 'react';
-import { Command, ArrowLeft } from 'lucide-react';
+import { Command, ArrowLeft, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useZoomStore, selectZoomLabel } from '@/stores/zoomStore';
 import { useCommandStore } from '@/stores/commandStore';
+import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
 
 interface AmbientShellProps {
@@ -21,6 +22,7 @@ export function AmbientShell({
   const navigate = useNavigate();
   const { level, setLevel } = useZoomStore();
   const { open: openCommand } = useCommandStore();
+  const logout = useAuthStore((state) => state.logout);
 
   const zoomLevels = ['now', 'horizon', 'landscape'] as const;
 
@@ -75,17 +77,26 @@ export function AmbientShell({
             <div />
           )}
 
-          {/* Command trigger */}
-          <button
-            onClick={openCommand}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-secondary text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <Command className="h-4 w-4" />
-            <span className="text-sm hidden sm:block">Command</span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-bg-tertiary text-xs text-text-muted">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          </button>
+          {/* Command trigger and logout */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openCommand}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-secondary text-text-secondary hover:text-text-primary transition-colors"
+            >
+              <Command className="h-4 w-4" />
+              <span className="text-sm hidden sm:block">Command</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-bg-tertiary text-xs text-text-muted">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </button>
+            <button
+              onClick={logout}
+              className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-secondary transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 

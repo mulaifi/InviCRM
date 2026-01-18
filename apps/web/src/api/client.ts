@@ -69,18 +69,15 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-// Paginated response matching clik-platform format
+// Paginated response matching InviCRM API format
 export interface PaginatedResponse<T> {
   data: T[];
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-    total: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  limit: number;
 }
 
-// Helper to transform clik-platform pagination to simpler format
+// Helper to transform pagination response
 export function transformPagination<T>(response: PaginatedResponse<T>): {
   data: T[];
   total: number;
@@ -88,11 +85,12 @@ export function transformPagination<T>(response: PaginatedResponse<T>): {
   limit: number;
   totalPages: number;
 } {
+  const totalPages = Math.ceil(response.total / response.limit);
   return {
     data: response.data,
-    total: response.pagination.total,
-    page: response.pagination.currentPage,
-    limit: response.pagination.pageSize,
-    totalPages: response.pagination.totalPages,
+    total: response.total,
+    page: response.page,
+    limit: response.limit,
+    totalPages,
   };
 }
