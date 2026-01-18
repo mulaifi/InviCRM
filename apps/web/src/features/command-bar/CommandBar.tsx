@@ -21,6 +21,7 @@ import { useCommandStore } from '@/stores/commandStore';
 import { useZoomStore } from '@/stores/zoomStore';
 import { useCommandParser } from './useCommandParser';
 import { getZoomFromCommand, COMMAND_CATEGORIES, VIEW_COMMANDS, ACTION_COMMANDS } from './command-registry';
+import { aiApi } from '@/api/ai';
 import type { ViewCommand } from '@/types/command';
 import { cn } from '@/lib/utils';
 
@@ -67,17 +68,69 @@ export function CommandBar() {
   }, [isOpen]);
 
   // Handle AI search submission
-  const handleAISubmit = useCallback(() => {
+  const handleAISubmit = useCallback(async () => {
     if (!query.trim() || isProcessing) return;
 
     setProcessing(true);
-    // TODO: Call AI endpoint to parse natural language query
-    // For now, just simulate and close
-    setTimeout(() => {
+    try {
+      const { parsed, intent } = await aiApi.parseAndMapQuery(query);
+
+      if (intent) {
+        // Execute the mapped intent
+        if (intent.kind === 'view') {
+          const zoom = getZoomFromCommand(intent.command as ViewCommand);
+          if (zoom) {
+            setLevel(zoom);
+          }
+
+          switch (intent.command) {
+            case 'VIEW:CONTACTS':
+              navigate('/contacts');
+              break;
+            case 'VIEW:ACTIVITIES':
+              navigate('/activities');
+              break;
+            case 'VIEW:SETTINGS':
+              navigate('/settings');
+              break;
+            case 'VIEW:PIPELINE':
+              setLevel('now');
+              navigate('/');
+              break;
+            default:
+              navigate('/');
+          }
+        } else if (intent.kind === 'action') {
+          switch (intent.command.type) {
+            case 'CREATE:DEAL':
+              navigate('/deals/new');
+              break;
+            case 'CREATE:CONTACT':
+              navigate('/contacts/new');
+              break;
+            case 'CREATE:TASK':
+              navigate('/tasks/new');
+              break;
+            case 'SEARCH':
+              navigate(`/contacts?search=${encodeURIComponent(intent.command.query)}`);
+              break;
+          }
+        }
+        close();
+      } else if (parsed.confidence < 0.5) {
+        // Low confidence - could show a message or fallback
+        console.log('Low confidence parse:', parsed);
+        close();
+      } else {
+        // Unknown intent with decent confidence - close for now
+        close();
+      }
+    } catch (error) {
+      console.error('AI parsing failed:', error);
+    } finally {
       setProcessing(false);
-      close();
-    }, 1000);
-  }, [query, isProcessing, setProcessing, close]);
+    }
+  }, [query, isProcessing, setProcessing, close, navigate, setLevel]);
 
   // Find command by id and execute it
   const executeCommand = useCallback(
@@ -150,13 +203,13 @@ export function CommandBar() {
             onClick={close}
           />
 
-          {/* Command palette */}
+          {/* Command palette - bottom sheet on mobile, centered on desktop */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-xl z-50"
+            className="fixed z-50 w-full px-4 sm:px-0 sm:max-w-xl sm:left-1/2 sm:-translate-x-1/2 bottom-0 sm:bottom-auto sm:top-[20%] safe-area-bottom"
           >
             <Command
               className="bg-bg-primary border border-bg-tertiary rounded-xl shadow-2xl overflow-hidden"

@@ -1,51 +1,79 @@
 import { type ReactNode } from 'react';
-import { Command } from 'lucide-react';
+import { Command, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useZoomStore, selectZoomLabel } from '@/stores/zoomStore';
 import { useCommandStore } from '@/stores/commandStore';
 import { cn } from '@/lib/utils';
 
 interface AmbientShellProps {
   children: ReactNode;
+  showZoomControls?: boolean;
+  title?: string;
+  showBackButton?: boolean;
 }
 
-export function AmbientShell({ children }: AmbientShellProps) {
+export function AmbientShell({
+  children,
+  showZoomControls = true,
+  title,
+  showBackButton = false,
+}: AmbientShellProps) {
+  const navigate = useNavigate();
   const { level, setLevel } = useZoomStore();
   const { open: openCommand } = useCommandStore();
 
   const zoomLevels = ['now', 'horizon', 'landscape'] as const;
 
   return (
-    <div className="min-h-screen bg-bg-primary flex flex-col">
+    <div className="min-h-screen bg-bg-primary flex flex-col safe-area-inset">
       {/* Minimal header */}
       <header className="sticky top-0 z-40 bg-bg-primary/80 backdrop-blur-md border-b border-bg-tertiary/50">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Logo */}
+          {/* Logo / Back button */}
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">IC</span>
-            </div>
-            <span className="text-text-primary font-medium hidden sm:block">
-              InviCRM
-            </span>
+            {showBackButton ? (
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="text-sm font-medium hidden sm:block">Dashboard</span>
+              </button>
+            ) : (
+              <>
+                <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">IC</span>
+                </div>
+                <span className="text-text-primary font-medium hidden sm:block">
+                  InviCRM
+                </span>
+              </>
+            )}
           </div>
 
-          {/* Zoom indicator */}
-          <div className="flex items-center gap-1 bg-bg-secondary rounded-full p-1">
-            {zoomLevels.map((z) => (
-              <button
-                key={z}
-                onClick={() => setLevel(z)}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
-                  level === z
-                    ? 'bg-bg-primary text-text-primary shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
-                )}
-              >
-                {selectZoomLabel(z)}
-              </button>
-            ))}
-          </div>
+          {/* Center: Zoom indicator or Page title */}
+          {showZoomControls ? (
+            <div className="flex items-center gap-1 bg-bg-secondary rounded-full p-1">
+              {zoomLevels.map((z) => (
+                <button
+                  key={z}
+                  onClick={() => setLevel(z)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+                    level === z
+                      ? 'bg-bg-primary text-text-primary shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary'
+                  )}
+                >
+                  {selectZoomLabel(z)}
+                </button>
+              ))}
+            </div>
+          ) : title ? (
+            <h1 className="text-lg font-semibold text-text-primary">{title}</h1>
+          ) : (
+            <div />
+          )}
 
           {/* Command trigger */}
           <button

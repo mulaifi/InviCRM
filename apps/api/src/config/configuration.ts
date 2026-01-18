@@ -37,9 +37,11 @@ export default () => ({
     appToken: process.env.SLACK_APP_TOKEN,
   },
 
-  anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY,
-    model: process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
+  ai: {
+    provider: process.env.AI_PROVIDER || 'ollama', // anthropic, ollama, openai
+    apiKey: process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY,
+    baseUrl: process.env.AI_BASE_URL || 'http://localhost:11434/v1',
+    model: process.env.AI_MODEL || 'qwen2.5:7b',
   },
 
   cors: {

@@ -10,6 +10,8 @@ import { ActivitiesModule } from './modules/activities/activities.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { HealthModule } from './modules/health/health.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { AiModule } from './modules/ai/ai.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import configuration from './config/configuration';
 // Note: WhatsApp integration moved to Phase 4 (future)
 
@@ -60,6 +62,8 @@ import configuration from './config/configuration';
     ActivitiesModule,
     HealthModule,
     OnboardingModule,
+    AiModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

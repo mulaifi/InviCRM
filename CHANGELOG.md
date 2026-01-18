@@ -4,6 +4,136 @@ All notable changes to InviCRM.
 
 ---
 
+## [18 January 2026] - Contacts Feature Implementation (Session 22)
+
+### Accomplished
+- Built complete Contacts feature with list view and detail slide-over
+- Created 5 new UI components: Modal, SlideOver, Select, Pagination, EmptyState
+- Implemented React Query hooks for contacts CRUD operations
+- Added URL deep linking support for contacts (/contacts/:id)
+- Enhanced AmbientShell to support non-dashboard pages
+- Build passes with no TypeScript errors
+
+### Files Added
+
+**UI Components (apps/web/src/components/ui/):**
+- `Modal.tsx` - Framer Motion animated modal with backdrop close, escape key support
+- `SlideOver.tsx` - Slide-over panel from right with spring animation
+- `Select.tsx` - Dropdown select with search support
+- `Pagination.tsx` - Page navigation with ellipsis for large page counts
+- `EmptyState.tsx` - Generic empty state with icon, title, description, action
+
+**Contacts Feature (apps/web/src/features/contacts/):**
+- `useContacts.ts` - React Query hooks (list, detail, create, update, delete, search)
+- `ContactCard.tsx` - Contact card with avatar, name, title, company, source badge
+- `ContactsFilters.tsx` - Search input, company filter, sort dropdown
+- `ContactsListView.tsx` - Main list with responsive grid, loading skeletons, empty state
+- `ContactDetailView.tsx` - Slide-over with info, activity timeline, related deals
+- `ContactForm.tsx` - Create/edit modal with validation
+- `ContactsEmptyState.tsx` - Empty states for no contacts/no search results
+- `index.ts` - Feature exports
+
+**Pages:**
+- `ContactsPage.tsx` - Page wrapper with URL deep linking
+
+### Files Changed
+- `apps/web/src/components/ui/index.ts` - Export new UI components
+- `apps/web/src/components/layout/AmbientShell.tsx` - Added showZoomControls, title, showBackButton props
+- `apps/web/src/pages/index.ts` - Export ContactsPage
+- `apps/web/src/App.tsx` - Added /contacts and /contacts/:id routes
+
+### Features
+- Navigation: Cmd+K > "Contacts" navigates to /contacts
+- List: Responsive grid (1/2/3 columns), search, filter by company, sort
+- Detail: Slide-over with contact info, activities, deals
+- Create/Edit: Modal form with validation, company select
+- Delete: Confirmation dialog
+- URL Deep Linking: /contacts/:id opens detail view
+- Mock Data: Graceful fallback when API unavailable
+
+### Decisions
+- AmbientShell extended with props rather than creating separate shell component
+- Contact detail uses slide-over (not separate page) for quick access
+- Form opens as modal, separate from detail view
+
+### Next Steps
+1. Build Deals Kanban page
+2. Create Activities timeline page
+3. Implement Settings pages
+4. Deploy frontend to staging
+
+---
+
+## [18 January 2026] - PR Review & Merge (Session 21)
+
+### Accomplished
+- Reviewed PR #1 "Remove dead ZoomContainer component"
+- Approved and merged PR to main branch
+- Resolved merge conflict in PROJECT-TODO.md (kept completed task markers)
+- Synced local repository with remote after merge
+
+### PR #1 Summary
+- Deleted unused `ZoomContainer` function (was never imported)
+- Extracted `ZoomView` component to its own file
+- Updated index.ts exports
+- Net change: -59 lines of dead code removed
+
+### Technical Details
+- Merge commit: `1f3f47d`
+- Branch: `claude/plan-next-tasks-X5qjE` → `main`
+- Conflict resolution: Preserved Session 20 task completions in TODO
+
+### Next Steps
+1. Deploy frontend to staging
+2. Build Contacts and Deals pages
+3. Add Settings pages
+
+---
+
+## [18 January 2026] - API Integration & Mobile (Session 20)
+
+### Accomplished
+- Removed dead ZoomContainer component (renamed file to ZoomView.tsx)
+- Created AI module with NL query parsing endpoint
+- Created Analytics module with dashboard data endpoints
+- Wired up AI command parsing for natural language queries
+- Implemented AI report generation with dynamic component suggestions
+- Added mobile responsiveness with safe area support
+
+### New API Endpoints
+- `POST /api/v1/ai/parse` - Parse natural language queries
+- `POST /api/v1/ai/generate-report` - Generate AI-powered report specs
+- `GET /api/v1/analytics/dashboard-now` - Today's dashboard data
+- `GET /api/v1/analytics/dashboard-horizon` - Weekly dashboard data
+- `GET /api/v1/analytics/dashboard-landscape` - Quarterly dashboard data
+
+### Files Added
+- `apps/api/src/modules/ai/` - AI module (controller, service, DTOs)
+- `apps/api/src/modules/analytics/` - Analytics module (controller, service)
+- `apps/web/src/components/layout/ZoomView.tsx` - Renamed from ZoomContainer
+
+### Files Changed
+- `apps/web/src/api/ai.ts` - Added parseQuery and parseAndMapQuery functions
+- `apps/web/src/features/command-bar/CommandBar.tsx` - Wired AI parsing, mobile layout
+- `apps/web/src/styles/globals.css` - Mobile utilities, safe area support
+- `apps/web/src/components/layout/AmbientShell.tsx` - Safe area padding
+- `apps/api/src/config/configuration.ts` - Updated AI config (multi-provider)
+- `apps/api/src/app.module.ts` - Added AI and Analytics modules
+
+### Technical Details
+- Command bar now slides up from bottom on mobile, centered on desktop
+- Dashboard views connect to real API with mock data fallback
+- AI report generation uses analytics data to create relevant components
+- Safe area insets for notched devices (iPhone X+)
+- Touch-friendly tap targets (44x44px minimum)
+
+### Next Steps
+1. Deploy frontend to staging
+2. Build Contacts and Deals pages
+3. Add Settings pages
+
+---
+
 ## [18 January 2026] - Command Bar Fixes & Code Quality (Session 19)
 
 ### Accomplished
