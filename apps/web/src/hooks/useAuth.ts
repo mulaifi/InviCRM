@@ -30,8 +30,9 @@ export function useAuth() {
   useEffect(() => {
     if (isAuthenticated && !user) {
       checkAuth();
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, [isAuthenticated, user, checkAuth, setLoading]);
 
   const loginMutation = useMutation({

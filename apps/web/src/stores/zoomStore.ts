@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+const ZOOM_TRANSITION_MS = 500;
+
 export type ZoomLevel = 'now' | 'horizon' | 'landscape';
 
 interface ZoomState {
@@ -34,7 +36,7 @@ export const useZoomStore = create<ZoomState>((set, get) => ({
       // Auto-clear transitioning after animation
       setTimeout(() => {
         set({ isTransitioning: false });
-      }, 500);
+      }, ZOOM_TRANSITION_MS);
     }
   },
 
@@ -73,7 +75,7 @@ export const useZoomStore = create<ZoomState>((set, get) => ({
 
         setTimeout(() => {
           set({ isTransitioning: false });
-        }, 500);
+        }, ZOOM_TRANSITION_MS);
       }
     }
   },

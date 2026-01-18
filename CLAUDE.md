@@ -83,6 +83,36 @@ InviCRM/
 | `technical/api-reference.md` | API endpoints documentation |
 | `.env.example` | Environment variables template |
 
+## Code Quality Standards
+
+### No Workarounds Policy
+- **Never apply workarounds or hacks.** If something doesn't work, understand the root cause and fix it properly.
+- Read library documentation before implementing. Use APIs as they were designed to be used.
+- If a library requires specific configuration (e.g., cmdk with `shouldFilter={false}` needs managed selection state), implement it correctly from the start.
+- When debugging, identify the actual problem rather than patching symptoms.
+
+### Clean Code Principles
+- **DRY (Don't Repeat Yourself):** Extract common logic into reusable functions/hooks/components.
+- **Single Responsibility:** Each function/component should do one thing well.
+- **Explicit over Implicit:** Code should be self-documenting. Avoid magic values or unclear patterns.
+- **Type Safety:** Use TypeScript strictly. No `any` types unless absolutely necessary with justification.
+
+### Library Usage
+- Always check the latest documentation before using a library feature.
+- Use libraries as intended by their authors. Don't fight the framework.
+- If a library doesn't fit the use case, consider alternatives rather than forcing it to work.
+- Pin major versions and understand breaking changes before upgrading.
+
+### Frontend Standards (React/TypeScript)
+- Use functional components with hooks.
+- Manage state at the appropriate level (local, context, or global store).
+- Follow React's rules of hooks strictly.
+- Use proper TypeScript types for all props, state, and function signatures.
+
+### Testing Mindset
+- Code should be testable. If it's hard to test, it's probably poorly designed.
+- Consider edge cases during implementation, not after.
+
 ## Working with This Project
 
 This project uses a **Claude Memory System** for context persistence:
@@ -99,4 +129,4 @@ This project uses a **Claude Memory System** for context persistence:
 - `/Users/mulaifi/Documents/LEAN CRM Project/02_WhatsApp_Strategy.md` - WhatsApp approach
 
 ---
-*Last Updated: 16 January 2026*
+*Last Updated: 18 January 2026*

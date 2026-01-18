@@ -8,7 +8,7 @@ export const VIEW_COMMANDS: CommandSuggestion[] = [
     description: 'View today\'s priorities and urgent items',
     icon: 'calendar',
     command: { kind: 'view', command: 'VIEW:TODAY' },
-    keywords: ['today', 'now', 'current', 'priorities'],
+    keywords: ['today', 'now', 'current', 'priorities', 'urgent'],
   },
   {
     id: 'view-week',
@@ -16,7 +16,7 @@ export const VIEW_COMMANDS: CommandSuggestion[] = [
     description: 'View this week\'s pipeline and meetings',
     icon: 'calendar-days',
     command: { kind: 'view', command: 'VIEW:WEEK' },
-    keywords: ['week', 'horizon', 'weekly', 'upcoming'],
+    keywords: ['week', 'horizon', 'weekly', 'upcoming', 'meetings'],
   },
   {
     id: 'view-pipeline',
@@ -40,7 +40,7 @@ export const VIEW_COMMANDS: CommandSuggestion[] = [
     description: 'View all contacts',
     icon: 'users',
     command: { kind: 'view', command: 'VIEW:CONTACTS' },
-    keywords: ['contacts', 'people', 'customers', 'leads'],
+    keywords: ['contacts', 'contact', 'people', 'customers', 'leads', 'persons'],
   },
   {
     id: 'view-activities',
@@ -48,7 +48,7 @@ export const VIEW_COMMANDS: CommandSuggestion[] = [
     description: 'View recent activities and timeline',
     icon: 'activity',
     command: { kind: 'view', command: 'VIEW:ACTIVITIES' },
-    keywords: ['activities', 'timeline', 'history', 'events'],
+    keywords: ['activities', 'activity', 'timeline', 'history', 'events'],
   },
   {
     id: 'view-settings',
@@ -56,7 +56,7 @@ export const VIEW_COMMANDS: CommandSuggestion[] = [
     description: 'Open settings',
     icon: 'settings',
     command: { kind: 'view', command: 'VIEW:SETTINGS' },
-    keywords: ['settings', 'preferences', 'config'],
+    keywords: ['settings', 'preferences', 'config', 'options'],
   },
 ];
 
@@ -102,15 +102,38 @@ export function matchCommands(query: string): CommandSuggestion[] {
 
   const allCommands = [...VIEW_COMMANDS, ...ACTION_COMMANDS];
 
-  return allCommands.filter((cmd) => {
-    const labelMatch = cmd.label.toLowerCase().includes(normalizedQuery);
-    const keywordMatch = cmd.keywords.some((kw) =>
-      kw.includes(normalizedQuery)
-    );
-    const descMatch = cmd.description?.toLowerCase().includes(normalizedQuery);
+  // Score each command based on match quality
+  const scored = allCommands.map((cmd) => {
+    let score = 0;
 
-    return labelMatch || keywordMatch || descMatch;
+    // Check if query contains any keyword (e.g., "show me contacts" contains "contacts")
+    const keywordInQuery = cmd.keywords.some((kw) => normalizedQuery.includes(kw));
+    if (keywordInQuery) score += 10;
+
+    // Check if label matches
+    const labelMatch = cmd.label.toLowerCase().includes(normalizedQuery);
+    if (labelMatch) score += 5;
+
+    // Check if any keyword starts with query (for partial typing like "con" -> "contacts")
+    const keywordStartsWith = cmd.keywords.some((kw) => kw.startsWith(normalizedQuery));
+    if (keywordStartsWith) score += 8;
+
+    // Check if query starts with any keyword
+    const queryStartsWithKeyword = cmd.keywords.some((kw) => normalizedQuery.startsWith(kw));
+    if (queryStartsWithKeyword) score += 3;
+
+    // Check description
+    const descMatch = cmd.description?.toLowerCase().includes(normalizedQuery);
+    if (descMatch) score += 2;
+
+    return { cmd, score };
   });
+
+  // Return commands with any match, sorted by score
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.cmd);
 }
 
 // Check if query might be a report request (needs AI)

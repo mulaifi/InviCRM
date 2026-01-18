@@ -31,7 +31,7 @@ export function useReportGenerator(): UseReportGeneratorResult {
     async (query: string) => {
       await mutation.mutateAsync(query);
     },
-    [mutation]
+    [mutation.mutateAsync]
   );
 
   const clear = useCallback(() => {

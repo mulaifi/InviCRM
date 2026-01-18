@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { Command } from 'cmdk';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -20,8 +20,8 @@ import {
 import { useCommandStore } from '@/stores/commandStore';
 import { useZoomStore } from '@/stores/zoomStore';
 import { useCommandParser } from './useCommandParser';
-import { getZoomFromCommand, COMMAND_CATEGORIES } from './command-registry';
-import type { CommandIntent, ViewCommand } from '@/types/command';
+import { getZoomFromCommand, COMMAND_CATEGORIES, VIEW_COMMANDS, ACTION_COMMANDS } from './command-registry';
+import type { ViewCommand } from '@/types/command';
 import { cn } from '@/lib/utils';
 
 const ICONS: Record<string, typeof Calendar> = {
@@ -44,21 +44,59 @@ export function CommandBar() {
   const { setLevel } = useZoomStore();
   const { suggestions, needsAI, isReportRequest } = useCommandParser(query);
 
-  // Keyboard shortcut
+  // Track selected item for cmdk when shouldFilter={false}
+  const [selectedValue, setSelectedValue] = useState('');
+
+  // Reset selection when suggestions change
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        useCommandStore.getState().toggle();
+    const firstSuggestion = suggestions[0];
+    if (firstSuggestion) {
+      setSelectedValue(firstSuggestion.id);
+    } else if (needsAI) {
+      setSelectedValue('ai-search');
+    } else {
+      setSelectedValue('');
+    }
+  }, [suggestions, needsAI]);
+
+  // Reset selection when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedValue('');
+    }
+  }, [isOpen]);
+
+  // Handle AI search submission
+  const handleAISubmit = useCallback(() => {
+    if (!query.trim() || isProcessing) return;
+
+    setProcessing(true);
+    // TODO: Call AI endpoint to parse natural language query
+    // For now, just simulate and close
+    setTimeout(() => {
+      setProcessing(false);
+      close();
+    }, 1000);
+  }, [query, isProcessing, setProcessing, close]);
+
+  // Find command by id and execute it
+  const executeCommand = useCallback(
+    (commandId: string) => {
+      // Handle AI search
+      if (commandId === 'ai-search') {
+        handleAISubmit();
+        return;
       }
-    };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+      const allCommands = [...VIEW_COMMANDS, ...ACTION_COMMANDS];
+      const command = allCommands.find((c) => c.id === commandId);
 
-  const handleSelect = useCallback(
-    async (intent: CommandIntent) => {
+      if (!command) {
+        return;
+      }
+
+      const intent = command.command;
+
       if (intent.kind === 'view') {
         const zoom = getZoomFromCommand(intent.command as ViewCommand);
         if (zoom) {
@@ -93,28 +131,10 @@ export function CommandBar() {
             break;
         }
         close();
-      } else if (intent.kind === 'report') {
-        // Handle report generation
-        setProcessing(true);
-        // AI will generate report - for now just close
-        close();
-        setProcessing(false);
       }
     },
-    [navigate, setLevel, close, setProcessing]
+    [navigate, setLevel, close, handleAISubmit]
   );
-
-  const handleAISubmit = useCallback(async () => {
-    if (!query.trim() || isProcessing) return;
-
-    setProcessing(true);
-    // In production, this would call the AI endpoint
-    // For now, just simulate and close
-    setTimeout(() => {
-      setProcessing(false);
-      close();
-    }, 1000);
-  }, [query, isProcessing, setProcessing, close]);
 
   return (
     <AnimatePresence>
@@ -141,6 +161,9 @@ export function CommandBar() {
             <Command
               className="bg-bg-primary border border-bg-tertiary rounded-xl shadow-2xl overflow-hidden"
               loop
+              shouldFilter={false}
+              value={selectedValue}
+              onValueChange={setSelectedValue}
             >
               <div className="flex items-center gap-2 px-4 border-b border-bg-tertiary">
                 <Search className="h-4 w-4 text-text-muted" />
@@ -149,6 +172,7 @@ export function CommandBar() {
                   onValueChange={setQuery}
                   placeholder="Type a command or ask a question..."
                   className="flex-1 h-12 bg-transparent text-text-primary placeholder:text-text-muted outline-none"
+                  autoFocus
                 />
                 {isProcessing && (
                   <Loader2 className="h-4 w-4 text-accent animate-spin" />
@@ -190,8 +214,8 @@ export function CommandBar() {
                         return (
                           <Command.Item
                             key={suggestion.id}
-                            value={suggestion.label}
-                            onSelect={() => handleSelect(suggestion.command)}
+                            value={suggestion.id}
+                            onSelect={executeCommand}
                             className={cn(
                               'flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer',
                               'text-text-primary',
@@ -222,7 +246,7 @@ export function CommandBar() {
                   <div className="border-t border-bg-tertiary mt-2 pt-2">
                     <Command.Item
                       value="ai-search"
-                      onSelect={handleAISubmit}
+                      onSelect={() => executeCommand('ai-search')}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer',
                         'text-accent',

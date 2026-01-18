@@ -4,6 +4,53 @@ All notable changes to InviCRM.
 
 ---
 
+## [18 January 2026] - Command Bar Fixes & Code Quality (Session 19)
+
+### Accomplished
+- Fixed command bar modal closing after typing 2nd character
+- Fixed command bar selection not working (Enter/click did nothing)
+- Fixed keyword matching in command search (was checking backwards)
+- Added autoFocus to command input
+- Added Code Quality Standards section to CLAUDE.md
+- Ran comprehensive code review and fixed all identified issues
+
+### Technical Fixes
+
+**Command Bar (cmdk library):**
+- Added `shouldFilter={false}` to disable cmdk's internal filtering (we use custom filtering)
+- Added managed selection state with `value` and `onValueChange` props on Command component
+- Fixed `matchCommands()` to check if query contains keyword (not keyword contains query)
+- Added scoring system for better command matching relevance
+
+**Code Review Fixes:**
+- Removed duplicate Cmd+K keyboard listener from CommandBar.tsx (already handled in useKeyboardShortcuts)
+- Fixed unconditional `setLoading(false)` in useAuth.ts (now conditional)
+- Fixed mutation dependency array in useReportGenerator.ts (use `mutation.mutateAsync` not `mutation`)
+- Added `ZOOM_TRANSITION_MS` constant in zoomStore.ts (replaced magic number 500)
+- Identified `ZoomContainer` component as dead code (ZoomView is used, ZoomContainer is not)
+
+### Decisions
+- **No Workarounds Policy:** Added to CLAUDE.md - always fix root cause, never apply hacks
+- When using cmdk with `shouldFilter={false}`, must manage selection state explicitly
+- Local command matching prioritized over AI for queries containing known keywords
+
+### Files Changed
+- `apps/web/src/features/command-bar/CommandBar.tsx` - Fixed cmdk usage, removed duplicate listener
+- `apps/web/src/features/command-bar/command-registry.ts` - Fixed matching logic, added scoring
+- `apps/web/src/features/command-bar/useCommandParser.ts` - Simplified logic
+- `apps/web/src/hooks/useAuth.ts` - Fixed conditional setLoading
+- `apps/web/src/features/report-builder/useReportGenerator.ts` - Fixed dependency array
+- `apps/web/src/stores/zoomStore.ts` - Added ZOOM_TRANSITION_MS constant
+- `CLAUDE.md` - Added Code Quality Standards section
+
+### Next Steps
+1. Remove dead ZoomContainer component
+2. Wire up AI command parsing for natural language queries
+3. Connect dashboard views to real API endpoints
+4. Test command bar end-to-end
+
+---
+
 ## [18 January 2026] - Ambient Dashboard Implementation (Session 18)
 
 ### Accomplished

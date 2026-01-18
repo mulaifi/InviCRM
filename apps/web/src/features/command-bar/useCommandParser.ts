@@ -21,14 +21,15 @@ export function useCommandParser(query: string): UseCommandParserResult {
       };
     }
 
-    // Check if it's a potential report request
-    const isReport = isReportQuery(trimmedQuery);
-
     // Try to match local commands first
     const localMatches = matchCommands(trimmedQuery);
 
-    // If we have exact/good local matches, use them
-    if (localMatches.length > 0 && !isReport) {
+    // Check if it's a potential report request
+    const isReport = isReportQuery(trimmedQuery);
+
+    // If we have strong local matches, prioritize them over AI
+    // This handles queries like "show me all contacts" where "contacts" matches
+    if (localMatches.length > 0) {
       return {
         suggestions: localMatches,
         needsAI: false,
@@ -36,10 +37,10 @@ export function useCommandParser(query: string): UseCommandParserResult {
       };
     }
 
-    // For report requests or no local matches, indicate AI is needed
+    // No local matches - might need AI for complex queries
     return {
-      suggestions: localMatches, // Still show any partial matches
-      needsAI: localMatches.length === 0 || isReport,
+      suggestions: [],
+      needsAI: true,
       isReportRequest: isReport,
     };
   }, [query]);

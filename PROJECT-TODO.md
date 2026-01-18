@@ -92,6 +92,10 @@
 - [x] Build Report Builder with 8 components
 - [x] Implement keyboard shortcuts (Cmd+1/2/3, Cmd+K)
 - [x] Add mock data fallback when API unavailable
+- [x] Fix command bar bugs (modal closing, selection not working, keyword matching)
+- [x] Code review and cleanup (removed duplicate listeners, fixed hooks, added constants)
+- [ ] Remove dead ZoomContainer component
+- [ ] Wire up AI command parsing for natural language queries
 - [~] Connect to real API endpoints
 - [ ] Implement AI report generation
 - [ ] Add mobile responsiveness
@@ -166,4 +170,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **Keyboard Shortcuts:** Cmd+K (command bar), Cmd+1/2/3 (zoom levels)
 
 ---
-*Last Updated: 18 January 2026 (Session 18)*
+*Last Updated: 18 January 2026 (Session 19)*
