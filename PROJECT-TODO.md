@@ -94,7 +94,7 @@
 - [x] Add mock data fallback when API unavailable
 - [x] Fix command bar bugs (modal closing, selection not working, keyword matching)
 - [x] Code review and cleanup (removed duplicate listeners, fixed hooks, added constants)
-- [ ] Remove dead ZoomContainer component
+- [x] Remove dead ZoomContainer component
 - [ ] Wire up AI command parsing for natural language queries
 - [~] Connect to real API endpoints
 - [ ] Implement AI report generation

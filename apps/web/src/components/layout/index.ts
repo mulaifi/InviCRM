@@ -1,2 +1,2 @@
 export { AmbientShell } from './AmbientShell';
-export { ZoomContainer, ZoomView } from './ZoomContainer';
+export { ZoomView } from './ZoomView';
