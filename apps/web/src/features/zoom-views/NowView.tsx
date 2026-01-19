@@ -79,8 +79,8 @@ export function NowView() {
               >
                 <div className="flex items-center gap-3">
                   <Avatar
-                    firstName={deal.primaryContact?.firstName || 'U'}
-                    lastName={deal.primaryContact?.lastName || undefined}
+                    firstName={deal.contact?.firstName || 'U'}
+                    lastName={deal.contact?.lastName || undefined}
                     size="sm"
                   />
                   <div>
@@ -88,7 +88,7 @@ export function NowView() {
                       {deal.name}
                     </p>
                     <p className="text-xs text-text-secondary">
-                      {deal.primaryContact?.firstName} {deal.primaryContact?.lastName}
+                      {deal.contact?.firstName} {deal.contact?.lastName}
                     </p>
                   </div>
                 </div>

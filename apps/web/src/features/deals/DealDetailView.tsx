@@ -10,13 +10,12 @@ import {
   Phone,
   MessageSquare,
   Clock,
-  Thermometer,
 } from 'lucide-react';
 import { SlideOver, Badge, Button, Card, Skeleton } from '@/components/ui';
 import { useDeal, useDeleteDeal } from './useDeals';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Deal, Activity } from '@/types';
-import { getDealValueAsNumber, isDealClosed, isDealWon } from '@/types';
+import { getDealAmountAsNumber, isDealClosed, isDealWon } from '@/types';
 
 export interface DealDetailViewProps {
   dealId: string | null;
@@ -63,19 +62,6 @@ function getStatusLabel(deal: Deal): string {
   return 'Open';
 }
 
-function getTemperatureColor(temp: string | null): string {
-  switch (temp) {
-    case 'hot':
-      return 'text-danger';
-    case 'warm':
-      return 'text-warning';
-    case 'cold':
-      return 'text-accent';
-    default:
-      return 'text-text-muted';
-  }
-}
-
 export function DealDetailView({
   dealId,
   onClose,
@@ -98,11 +84,6 @@ export function DealDetailView({
       console.error('Failed to delete deal:', error);
     }
   };
-
-  // Parse owner name for display
-  const ownerNameParts = deal?.owner?.name?.split(' ') || [];
-  const ownerFirstName = ownerNameParts[0] || '';
-  const ownerLastName = ownerNameParts.slice(1).join(' ') || '';
 
   const footer = deal ? (
     <div className="flex items-center justify-between">
@@ -144,7 +125,7 @@ export function DealDetailView({
           <div className="flex items-start justify-between">
             <div>
               <span className="text-3xl font-bold text-success">
-                {formatCurrency(getDealValueAsNumber(deal), deal.currency)}
+                {formatCurrency(getDealAmountAsNumber(deal), deal.currency)}
               </span>
               <div className="flex items-center gap-2 mt-1">
                 <Badge size="sm" variant={getStatusVariant(deal)}>
@@ -152,12 +133,6 @@ export function DealDetailView({
                 </Badge>
                 {deal.stage && (
                   <Badge size="sm">{deal.stage.name}</Badge>
-                )}
-                {deal.temperature && (
-                  <span className={`flex items-center gap-1 text-xs ${getTemperatureColor(deal.temperature)}`}>
-                    <Thermometer className="h-3 w-3" />
-                    {deal.temperature}
-                  </span>
                 )}
               </div>
             </div>
@@ -175,19 +150,19 @@ export function DealDetailView({
               Deal Information
             </h3>
             <div className="space-y-3">
-              {deal.primaryContact && (
+              {deal.contact && (
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-primary">
-                    {deal.primaryContact.firstName} {deal.primaryContact.lastName}
+                    {deal.contact.firstName} {deal.contact.lastName}
                   </span>
                 </div>
               )}
-              {deal.customer && (
+              {deal.company && (
                 <div className="flex items-center gap-3">
                   <Building2 className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-primary">
-                    {deal.customer.name}
+                    {deal.company.name}
                   </span>
                 </div>
               )}
@@ -197,11 +172,11 @@ export function DealDetailView({
                   Expected close: {formatDate(deal.expectedCloseDate)}
                 </span>
               </div>
-              {deal.actualCloseDate && (
+              {deal.closedAt && (
                 <div className="flex items-center gap-3">
                   <Calendar className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-primary">
-                    Closed: {formatDate(deal.actualCloseDate)}
+                    Closed: {formatDate(deal.closedAt)}
                   </span>
                 </div>
               )}
@@ -209,29 +184,21 @@ export function DealDetailView({
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-secondary">
-                    Owner: {ownerFirstName} {ownerLastName}
-                  </span>
-                </div>
-              )}
-              {deal.team && (
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-text-muted" />
-                  <span className="text-sm text-text-secondary">
-                    Team: {deal.team.name}
+                    Owner: {deal.owner.firstName} {deal.owner.lastName}
                   </span>
                 </div>
               )}
             </div>
           </Card>
 
-          {/* Description */}
-          {deal.description && (
+          {/* Notes */}
+          {deal.notes && (
             <Card>
               <h3 className="text-sm font-medium text-text-secondary mb-2">
-                Description
+                Notes
               </h3>
               <p className="text-sm text-text-primary whitespace-pre-wrap">
-                {deal.description}
+                {deal.notes}
               </p>
             </Card>
           )}
@@ -281,8 +248,8 @@ export function DealDetailView({
                   Delete Deal?
                 </h3>
                 <p className="text-sm text-text-secondary mb-4">
-                  This action cannot be undone. This will permanently delete the
-                  deal "{deal.name}" and remove all associated data.
+                  This action cannot be undone. This will permanently delete
+                  the deal "{deal.name}" and remove all associated data.
                 </p>
                 <div className="flex justify-end gap-2">
                   <Button
@@ -306,7 +273,9 @@ export function DealDetailView({
           )}
         </div>
       ) : (
-        <div className="text-center py-8 text-text-muted">Deal not found</div>
+        <div className="text-center py-8 text-text-muted">
+          Deal not found
+        </div>
       )}
     </SlideOver>
   );

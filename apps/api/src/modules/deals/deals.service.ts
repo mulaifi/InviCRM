@@ -5,6 +5,34 @@ import { Deal, Pipeline, Stage } from '@invicrm/database';
 import { CreateDealDto } from './dto/create-deal.dto';
 import { UpdateDealDto } from './dto/update-deal.dto';
 
+// Transform stage to include computed isClosed and isWon fields
+function transformStage(stage: Stage | undefined) {
+  if (!stage) return undefined;
+  return {
+    id: stage.id,
+    tenantId: stage.tenantId,
+    pipelineId: stage.pipelineId,
+    name: stage.name,
+    position: stage.position,
+    probability: stage.probability,
+    type: stage.type,
+    color: stage.color,
+    createdAt: stage.createdAt,
+    updatedAt: stage.updatedAt,
+    isClosed: stage.type === 'won' || stage.type === 'lost',
+    isWon: stage.type === 'won',
+  };
+}
+
+// Transform deal to include transformed stage
+function transformDeal(deal: Deal) {
+  const transformed: Record<string, unknown> = { ...deal };
+  if (deal.stage) {
+    transformed.stage = transformStage(deal.stage);
+  }
+  return transformed;
+}
+
 @Injectable()
 export class DealsService {
   constructor(
@@ -53,7 +81,7 @@ export class DealsService {
       closingDateFrom?: Date;
       closingDateTo?: Date;
     } = {},
-  ): Promise<{ data: Deal[]; total: number; page: number; limit: number }> {
+  ) {
     const page = options.page || 1;
     const limit = options.limit || 50;
     const skip = (page - 1) * limit;
@@ -88,10 +116,10 @@ export class DealsService {
       take: limit,
     });
 
-    return { data, total, page, limit };
+    return { data: data.map(transformDeal), total, page, limit };
   }
 
-  async findById(tenantId: string, id: string): Promise<Deal> {
+  async findById(tenantId: string, id: string) {
     const deal = await this.dealRepository.findOne({
       where: { id, tenantId, isDeleted: false },
       relations: ['contact', 'company', 'stage', 'pipeline', 'owner', 'activities'],
@@ -101,7 +129,7 @@ export class DealsService {
       throw new NotFoundException(`Deal with ID ${id} not found`);
     }
 
-    return deal;
+    return transformDeal(deal);
   }
 
   async update(
@@ -145,12 +173,12 @@ export class DealsService {
     await this.dealRepository.save(deal);
   }
 
-  async getDealsClosingThisMonth(tenantId: string): Promise<Deal[]> {
+  async getDealsClosingThisMonth(tenantId: string) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    return this.dealRepository.find({
+    const deals = await this.dealRepository.find({
       where: {
         tenantId,
         isDeleted: false,
@@ -160,6 +188,8 @@ export class DealsService {
       relations: ['contact', 'company', 'stage'],
       order: { expectedCloseDate: 'ASC' },
     });
+
+    return deals.map(transformDeal);
   }
 
   async getPipelineStats(tenantId: string, pipelineId?: string): Promise<any> {

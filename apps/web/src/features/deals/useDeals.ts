@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { dealsApi, pipelinesApi, pipelineStagesApi } from '@/api/deals';
+import { dealsApi, pipelinesApi, stagesApi } from '@/api/deals';
 import type { CreateDealRequest, UpdateDealRequest } from '@/api/deals';
 import type { Deal } from '@/types';
 
@@ -7,7 +7,7 @@ import type { Deal } from '@/types';
 export const dealsKeys = {
   all: ['deals'] as const,
   lists: () => [...dealsKeys.all, 'list'] as const,
-  list: (params: { stageId?: string; customerId?: string; ownerId?: string }) =>
+  list: (params: { pipelineId?: string; stageId?: string; ownerId?: string }) =>
     [...dealsKeys.lists(), params] as const,
   details: () => [...dealsKeys.all, 'detail'] as const,
   detail: (id: string) => [...dealsKeys.details(), id] as const,
@@ -18,33 +18,31 @@ export const pipelinesKeys = {
   lists: () => [...pipelinesKeys.all, 'list'] as const,
   details: () => [...pipelinesKeys.all, 'detail'] as const,
   detail: (id: string) => [...pipelinesKeys.details(), id] as const,
-  stages: () => [...pipelinesKeys.all, 'stages'] as const,
+  default: () => [...pipelinesKeys.all, 'default'] as const,
+  stages: (pipelineId?: string) => [...pipelinesKeys.all, 'stages', pipelineId] as const,
 };
 
-// List deals with filters (fetches all deals for kanban view)
+// List deals with filters
 export function useDealsList(params?: {
+  pipelineId?: string;
   stageId?: string;
-  customerId?: string;
   ownerId?: string;
   page?: number;
-  pageSize?: number;
-  // pipelineId is ignored since clik-platform has flat stages
-  pipelineId?: string;
+  limit?: number;
 }) {
   return useQuery({
     queryKey: dealsKeys.list({
+      pipelineId: params?.pipelineId,
       stageId: params?.stageId,
-      customerId: params?.customerId,
       ownerId: params?.ownerId,
     }),
     queryFn: () =>
       dealsApi.list({
+        pipelineId: params?.pipelineId,
         stageId: params?.stageId,
-        customerId: params?.customerId,
         ownerId: params?.ownerId,
         page: params?.page,
-        pageSize: params?.pageSize,
-        all: true, // Fetch all deals for kanban view
+        limit: params?.limit || 100, // Default high limit for kanban view
       }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -60,7 +58,7 @@ export function useDeal(id: string | undefined) {
   });
 }
 
-// List all pipelines (returns virtual pipeline with all stages)
+// List all pipelines
 export function usePipelines() {
   return useQuery({
     queryKey: pipelinesKeys.lists(),
@@ -69,24 +67,36 @@ export function usePipelines() {
   });
 }
 
-// Get single pipeline with stages
-export function usePipeline(id: string | undefined) {
+// Get default pipeline with stages
+export function useDefaultPipeline() {
   return useQuery({
-    queryKey: pipelinesKeys.detail(id ?? 'default'),
-    queryFn: () => pipelinesApi.get(id ?? 'default'),
-    enabled: true, // Always enabled since we have a virtual default pipeline
+    queryKey: pipelinesKeys.default(),
+    queryFn: () => pipelinesApi.getDefault(),
     staleTime: 1000 * 60 * 10,
   });
 }
 
-// Get all pipeline stages directly
-export function usePipelineStages() {
+// Get single pipeline with stages
+export function usePipeline(id: string | undefined) {
   return useQuery({
-    queryKey: pipelinesKeys.stages(),
-    queryFn: () => pipelineStagesApi.list(),
+    queryKey: pipelinesKeys.detail(id!),
+    queryFn: () => pipelinesApi.get(id!),
+    enabled: !!id,
     staleTime: 1000 * 60 * 10,
   });
 }
+
+// Get all stages (optionally filtered by pipeline)
+export function useStages(pipelineId?: string) {
+  return useQuery({
+    queryKey: pipelinesKeys.stages(pipelineId),
+    queryFn: () => stagesApi.list(pipelineId),
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+// Legacy alias
+export const usePipelineStages = useStages;
 
 // Create deal mutation
 export function useCreateDeal() {

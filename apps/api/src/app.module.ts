@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ContactsModule } from './modules/contacts/contacts.module';
 import { DealsModule } from './modules/deals/deals.module';
+import { PipelinesModule } from './modules/pipelines/pipelines.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { HealthModule } from './modules/health/health.module';
@@ -59,6 +60,7 @@ import configuration from './config/configuration';
     TenantsModule,
     ContactsModule,
     DealsModule,
+    PipelinesModule,
     ActivitiesModule,
     HealthModule,
     OnboardingModule,

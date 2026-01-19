@@ -53,11 +53,6 @@ export function DealCard({
 
   const dragging = isDragging || isSortableDragging;
 
-  // Parse owner name into first/last for avatar
-  const ownerNameParts = deal.owner?.name?.split(' ') || [];
-  const ownerFirstName = ownerNameParts[0] || '';
-  const ownerLastName = ownerNameParts.slice(1).join(' ') || '';
-
   return (
     <Card
       ref={setNodeRef}
@@ -84,18 +79,18 @@ export function DealCard({
 
       {/* Contact/Company info */}
       <div className="space-y-1.5 text-xs text-text-secondary">
-        {deal.primaryContact && (
+        {deal.contact && (
           <div className="flex items-center gap-1.5">
             <User className="h-3 w-3 text-text-muted" />
             <span className="truncate">
-              {deal.primaryContact.firstName} {deal.primaryContact.lastName}
+              {deal.contact.firstName} {deal.contact.lastName}
             </span>
           </div>
         )}
-        {deal.customer && (
+        {deal.company && (
           <div className="flex items-center gap-1.5">
             <Building2 className="h-3 w-3 text-text-muted" />
-            <span className="truncate">{deal.customer.name}</span>
+            <span className="truncate">{deal.company.name}</span>
           </div>
         )}
       </div>
@@ -112,8 +107,8 @@ export function DealCard({
         )}
         {deal.owner && (
           <Avatar
-            firstName={ownerFirstName}
-            lastName={ownerLastName}
+            firstName={deal.owner.firstName}
+            lastName={deal.owner.lastName}
             size="sm"
             className="h-6 w-6 text-[10px]"
           />

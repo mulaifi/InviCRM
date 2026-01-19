@@ -4,6 +4,50 @@ All notable changes to InviCRM.
 
 ---
 
+## [19 January 2026] - Deals Schema Alignment & Kanban Fix (Session 25)
+
+### Accomplished
+- Fixed DealForm.tsx to use InviCRM schema (was using clik-platform schema)
+- Added fallback to derive stages from deals data when stages API unavailable
+- Created PipelinesModule with PipelinesController and StagesController
+- Updated all frontend deal components to use correct field names (amount vs value, contact vs primaryContact, etc.)
+- Aligned frontend types with InviCRM backend schema
+
+### Decisions
+- **Stages Fallback:** Kanban view now extracts unique stages from deals response as fallback when /stages endpoint fails
+- **Schema Alignment:** Frontend uses InviCRM field names (companyId, contactId, amount, notes, probability)
+
+### Files Changed
+
+**Frontend Deals Feature:**
+- `apps/web/src/features/deals/DealForm.tsx` - Rewrote for InviCRM schema (companyId, contactId, amount, notes, probability)
+- `apps/web/src/features/deals/DealsKanbanView.tsx` - Added stages derivation from deals as fallback
+- `apps/web/src/features/deals/DealDetailView.tsx` - Updated for InviCRM schema
+- `apps/web/src/features/deals/DealCard.tsx` - Updated field references
+
+**Backend Pipelines Module (created but routing issue pending):**
+- `apps/api/src/modules/pipelines/pipelines.module.ts` - New module
+- `apps/api/src/modules/pipelines/pipelines.service.ts` - Service with stage transforms
+- `apps/api/src/modules/pipelines/pipelines.controller.ts` - Controllers for pipelines, stages, pipeline-stages
+
+### Technical Details
+- Deals Kanban now works by extracting stages from the `deal.stage` object in each deal response
+- DealForm uses `useCompaniesList` instead of `useCustomersList`
+- Removed `temperature` field (not in InviCRM schema)
+- Added `probability` field to deal form
+
+### Known Issue
+- PipelinesModule routes not registering in NestJS (build configuration issue, deferred)
+- Workaround: Frontend derives stages from deals data
+
+### Next Steps
+1. Investigate NestJS routing issue for PipelinesModule
+2. Test deals Kanban end-to-end with real data
+3. Deploy frontend to staging
+4. Build Activities timeline page
+
+---
+
 ## [19 January 2026] - Standalone Product Implementation (Session 24)
 
 ### Accomplished

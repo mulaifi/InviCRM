@@ -31,18 +31,11 @@ export function ContactCard({ contact, onClick, isSelected }: ContactCardProps) 
             <h3 className="font-medium text-text-primary truncate">
               {contact.firstName} {contact.lastName}
             </h3>
-            <div className="flex items-center gap-1">
-              {contact.isPrimary && (
-                <Badge size="sm" variant="success">
-                  Primary
-                </Badge>
-              )}
-              {contact.isDecisionMaker && (
-                <Badge size="sm" variant="warning">
-                  DM
-                </Badge>
-              )}
-            </div>
+            {contact.confidenceScore && contact.confidenceScore >= 80 && (
+              <Badge size="sm" variant="success">
+                High Score
+              </Badge>
+            )}
           </div>
 
           {contact.title && (
@@ -52,10 +45,10 @@ export function ContactCard({ contact, onClick, isSelected }: ContactCardProps) 
           )}
 
           <div className="mt-2 space-y-1">
-            {contact.customer && (
+            {contact.company && (
               <div className="flex items-center gap-1.5 text-xs text-text-muted">
                 <Building2 className="h-3.5 w-3.5" />
-                <span className="truncate">{contact.customer.name}</span>
+                <span className="truncate">{contact.company.name}</span>
               </div>
             )}
 

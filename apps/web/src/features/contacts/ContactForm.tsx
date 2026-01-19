@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Input, Select, Button } from '@/components/ui';
-import { useCreateContact, useUpdateContact, useCustomersList } from './useContacts';
+import { useCreateContact, useUpdateContact, useCompaniesList } from './useContacts';
 import type { Contact } from '@/types';
 import type { SelectOption } from '@/components/ui';
 
@@ -15,20 +15,26 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
-  mobile: string;
   title: string;
-  department: string;
-  customerId: string;
-  isPrimary: boolean;
-  isDecisionMaker: boolean;
+  companyId: string;
+  source: string;
   notes: string;
 }
 
 interface FormErrors {
   firstName?: string;
-  customerId?: string;
   email?: string;
 }
+
+const sourceOptions: SelectOption[] = [
+  { value: '', label: 'Select source' },
+  { value: 'email', label: 'Email' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'referral', label: 'Referral' },
+  { value: 'website', label: 'Website' },
+  { value: 'event', label: 'Event' },
+  { value: 'manual', label: 'Manual Entry' },
+];
 
 export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
   const isEditing = !!contact;
@@ -38,12 +44,9 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
     lastName: '',
     email: '',
     phone: '',
-    mobile: '',
     title: '',
-    department: '',
-    customerId: '',
-    isPrimary: false,
-    isDecisionMaker: false,
+    companyId: '',
+    source: '',
     notes: '',
   });
 
@@ -51,7 +54,7 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
 
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
-  const { data: customersData } = useCustomersList();
+  const { data: companiesData } = useCompaniesList();
 
   const isSubmitting = createContact.isPending || updateContact.isPending;
 
@@ -64,12 +67,9 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
           lastName: contact.lastName || '',
           email: contact.email || '',
           phone: contact.phone || '',
-          mobile: contact.mobile || '',
           title: contact.title || '',
-          department: contact.department || '',
-          customerId: contact.customerId || '',
-          isPrimary: contact.isPrimary,
-          isDecisionMaker: contact.isDecisionMaker,
+          companyId: contact.companyId || '',
+          source: contact.source || '',
           notes: contact.notes || '',
         });
       } else {
@@ -78,12 +78,9 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
           lastName: '',
           email: '',
           phone: '',
-          mobile: '',
           title: '',
-          department: '',
-          customerId: '',
-          isPrimary: false,
-          isDecisionMaker: false,
+          companyId: '',
+          source: '',
           notes: '',
         });
       }
@@ -91,12 +88,12 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
     }
   }, [isOpen, contact]);
 
-  // Build customer options
-  const customerOptions: SelectOption[] = [
-    { value: '', label: 'Select a customer' },
-    ...(customersData?.data || []).map((customer) => ({
-      value: customer.id,
-      label: customer.name,
+  // Build company options
+  const companyOptions: SelectOption[] = [
+    { value: '', label: 'Select a company (optional)' },
+    ...(companiesData?.data || []).map((company) => ({
+      value: company.id,
+      label: company.name,
     })),
   ];
 
@@ -105,10 +102,6 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
-    }
-
-    if (!formData.customerId) {
-      newErrors.customerId = 'Customer is required';
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -133,28 +126,20 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
             lastName: formData.lastName.trim() || null,
             email: formData.email.trim() || null,
             phone: formData.phone.trim() || null,
-            mobile: formData.mobile.trim() || null,
             title: formData.title.trim() || null,
-            department: formData.department.trim() || null,
-            customerId: formData.customerId,
-            isPrimary: formData.isPrimary,
-            isDecisionMaker: formData.isDecisionMaker,
-            notes: formData.notes.trim() || null,
+            companyId: formData.companyId || null,
+            source: formData.source || null,
           },
         });
       } else {
         await createContact.mutateAsync({
-          customerId: formData.customerId,
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim() || undefined,
           email: formData.email.trim() || undefined,
           phone: formData.phone.trim() || undefined,
-          mobile: formData.mobile.trim() || undefined,
           title: formData.title.trim() || undefined,
-          department: formData.department.trim() || undefined,
-          isPrimary: formData.isPrimary,
-          isDecisionMaker: formData.isDecisionMaker,
-          notes: formData.notes.trim() || undefined,
+          companyId: formData.companyId || undefined,
+          source: formData.source || undefined,
         });
       }
 
@@ -164,10 +149,10 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
     }
   };
 
-  const handleChange = (field: keyof FormData, value: string | boolean) => {
+  const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
-    if (typeof value === 'string' && errors[field as keyof FormErrors]) {
+    if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
@@ -185,16 +170,6 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Customer */}
-        <Select
-          label="Customer"
-          value={formData.customerId}
-          onChange={(value) => handleChange('customerId', value)}
-          options={customerOptions}
-          error={errors.customerId}
-          placeholder="Select a customer"
-        />
-
         {/* Name row */}
         <div className="grid grid-cols-2 gap-4">
           <Input
@@ -226,65 +201,42 @@ export function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
           placeholder="ahmed@example.com"
         />
 
-        {/* Phone and Mobile */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            id="phone"
-            type="tel"
-            label="Phone"
-            value={formData.phone}
-            onChange={(e) => handleChange('phone', e.target.value)}
-            placeholder="+965 2222 3333"
-          />
-          <Input
-            id="mobile"
-            type="tel"
-            label="Mobile"
-            value={formData.mobile}
-            onChange={(e) => handleChange('mobile', e.target.value)}
-            placeholder="+965 9999 1234"
-          />
-        </div>
+        {/* Phone */}
+        <Input
+          id="phone"
+          type="tel"
+          label="Phone"
+          value={formData.phone}
+          onChange={(e) => handleChange('phone', e.target.value)}
+          placeholder="+965 2222 3333"
+        />
 
-        {/* Title and Department */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            id="title"
-            label="Job Title"
-            value={formData.title}
-            onChange={(e) => handleChange('title', e.target.value)}
-            placeholder="Sales Manager"
-          />
-          <Input
-            id="department"
-            label="Department"
-            value={formData.department}
-            onChange={(e) => handleChange('department', e.target.value)}
-            placeholder="Sales"
-          />
-        </div>
+        {/* Title */}
+        <Input
+          id="title"
+          label="Job Title"
+          value={formData.title}
+          onChange={(e) => handleChange('title', e.target.value)}
+          placeholder="Sales Manager"
+        />
 
-        {/* Checkboxes */}
-        <div className="flex items-center gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isPrimary}
-              onChange={(e) => handleChange('isPrimary', e.target.checked)}
-              className="h-4 w-4 rounded border-bg-tertiary text-accent focus:ring-accent"
-            />
-            <span className="text-sm text-text-secondary">Primary Contact</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isDecisionMaker}
-              onChange={(e) => handleChange('isDecisionMaker', e.target.checked)}
-              className="h-4 w-4 rounded border-bg-tertiary text-accent focus:ring-accent"
-            />
-            <span className="text-sm text-text-secondary">Decision Maker</span>
-          </label>
-        </div>
+        {/* Company */}
+        <Select
+          label="Company"
+          value={formData.companyId}
+          onChange={(value) => handleChange('companyId', value)}
+          options={companyOptions}
+          placeholder="Select a company"
+        />
+
+        {/* Source */}
+        <Select
+          label="Source"
+          value={formData.source}
+          onChange={(value) => handleChange('source', value)}
+          options={sourceOptions}
+          placeholder="How did you meet?"
+        />
 
         {/* Notes */}
         <div>

@@ -14,6 +14,7 @@ import { SlideOver, Avatar, Badge, Button, Card, Skeleton } from '@/components/u
 import { useContact, useDeleteContact } from './useContacts';
 import { formatRelativeTime } from '@/lib/utils';
 import type { Contact, Activity, Deal } from '@/types';
+import { getDealAmountAsNumber } from '@/types';
 
 export interface ContactDetailViewProps {
   contactId: string | null;
@@ -107,14 +108,11 @@ export function ContactDetailView({
               {contact.title && (
                 <p className="text-sm text-text-secondary">{contact.title}</p>
               )}
-              <div className="flex items-center gap-2 mt-2">
-                {contact.isPrimary && (
-                  <Badge size="sm" variant="success">Primary</Badge>
-                )}
-                {contact.isDecisionMaker && (
-                  <Badge size="sm" variant="warning">Decision Maker</Badge>
-                )}
-              </div>
+              {contact.confidenceScore && contact.confidenceScore >= 80 && (
+                <div className="mt-2">
+                  <Badge size="sm" variant="success">High Confidence</Badge>
+                </div>
+              )}
             </div>
           </div>
 
@@ -146,30 +144,19 @@ export function ContactDetailView({
                   </a>
                 </div>
               )}
-              {contact.mobile && (
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-text-muted" />
-                  <a
-                    href={`tel:${contact.mobile}`}
-                    className="text-sm text-text-primary hover:text-accent"
-                  >
-                    {contact.mobile} (Mobile)
-                  </a>
-                </div>
-              )}
-              {contact.customer && (
+              {contact.company && (
                 <div className="flex items-center gap-3">
                   <Building2 className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-primary">
-                    {contact.customer.name}
+                    {contact.company.name}
                   </span>
                 </div>
               )}
-              {contact.department && (
+              {contact.source && (
                 <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-text-muted" />
+                  <MessageSquare className="h-4 w-4 text-text-muted" />
                   <span className="text-sm text-text-secondary">
-                    {contact.department}
+                    Source: {contact.source}
                   </span>
                 </div>
               )}
@@ -179,7 +166,7 @@ export function ContactDetailView({
           {/* Related Deals */}
           <Card>
             <h3 className="text-sm font-medium text-text-secondary mb-3">
-              Related Deals ({contact.dealCount || 0})
+              Related Deals
             </h3>
             {deals.length > 0 ? (
               <div className="space-y-2">
@@ -196,7 +183,7 @@ export function ContactDetailView({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text-primary">
-                        {deal.value} {deal.currency}
+                        {getDealAmountAsNumber(deal).toLocaleString()} {deal.currency}
                       </span>
                       <Badge size="sm" variant="warning">
                         {deal.stage?.name}
@@ -257,6 +244,9 @@ export function ContactDetailView({
           <div className="text-xs text-text-muted space-y-1">
             <p>Added {formatRelativeTime(contact.createdAt)}</p>
             <p>Last updated {formatRelativeTime(contact.updatedAt)}</p>
+            {contact.lastContactedAt && (
+              <p>Last contacted {formatRelativeTime(contact.lastContactedAt)}</p>
+            )}
           </div>
 
           {/* Delete confirmation overlay */}

@@ -27,9 +27,25 @@ export function DealsKanbanView({
 
   // Fetch stages directly
   const { data: stagesData, isLoading: stagesLoading } = usePipelineStages();
-  const stages: Stage[] = stagesData
-    ? [...stagesData].sort((a, b) => a.position - b.position)
-    : [];
+
+  // Fetch deals (moved up to allow deriving stages from deals as fallback)
+  const { data: dealsData, isLoading: dealsLoading } = useDealsList();
+  const deals = dealsData?.data || [];
+
+  // Derive stages from API or from deals as fallback
+  const stages: Stage[] = (() => {
+    if (stagesData && stagesData.length > 0) {
+      return [...stagesData].sort((a, b) => a.position - b.position);
+    }
+    // Fallback: extract unique stages from deals
+    const stageMap = new Map<string, Stage>();
+    for (const deal of deals) {
+      if (deal.stage && !stageMap.has(deal.stage.id)) {
+        stageMap.set(deal.stage.id, deal.stage);
+      }
+    }
+    return Array.from(stageMap.values()).sort((a, b) => a.position - b.position);
+  })();
 
   // Determine selected pipeline (always default for now)
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | undefined>(
@@ -46,11 +62,7 @@ export function DealsKanbanView({
     }
   }, [pipelines, selectedPipelineId]);
 
-  // Fetch deals
-  const { data: dealsData, isLoading: dealsLoading } = useDealsList();
   const moveDealToStage = useMoveDealToStage();
-
-  const deals = dealsData?.data || [];
 
   // Handle moving a deal to a new stage
   const handleMoveDeal = useCallback((dealId: string, newStageId: string) => {

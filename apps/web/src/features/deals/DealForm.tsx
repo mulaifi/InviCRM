@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Modal, Input, Select, Button } from '@/components/ui';
 import { useCreateDeal, useUpdateDeal, usePipelineStages } from './useDeals';
-import { useContactsList, useCustomersList } from '@/features/contacts';
+import { useContactsList, useCompaniesList } from '@/features/contacts';
 import type { Deal } from '@/types';
 import type { SelectOption } from '@/components/ui';
-import { getDealValueAsNumber } from '@/types';
+import { getDealAmountAsNumber } from '@/types';
 
 export interface DealFormProps {
   isOpen: boolean;
@@ -15,21 +15,20 @@ export interface DealFormProps {
 
 interface FormData {
   name: string;
-  value: string;
+  amount: string;
   currency: string;
   stageId: string;
-  customerId: string;
-  primaryContactId: string;
+  companyId: string;
+  contactId: string;
   expectedCloseDate: string;
-  temperature: string;
-  description: string;
+  probability: string;
+  notes: string;
 }
 
 interface FormErrors {
   name?: string;
-  value?: string;
+  amount?: string;
   stageId?: string;
-  customerId?: string;
 }
 
 const currencyOptions: SelectOption[] = [
@@ -37,13 +36,6 @@ const currencyOptions: SelectOption[] = [
   { value: 'AED', label: 'AED - UAE Dirham' },
   { value: 'SAR', label: 'SAR - Saudi Riyal' },
   { value: 'USD', label: 'USD - US Dollar' },
-];
-
-const temperatureOptions: SelectOption[] = [
-  { value: '', label: 'Not set' },
-  { value: 'cold', label: 'Cold' },
-  { value: 'warm', label: 'Warm' },
-  { value: 'hot', label: 'Hot' },
 ];
 
 export function DealForm({
@@ -56,14 +48,14 @@ export function DealForm({
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    value: '',
+    amount: '',
     currency: 'KWD',
     stageId: '',
-    customerId: '',
-    primaryContactId: '',
+    companyId: '',
+    contactId: '',
     expectedCloseDate: '',
-    temperature: '',
-    description: '',
+    probability: '',
+    notes: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -71,14 +63,14 @@ export function DealForm({
   const createDeal = useCreateDeal();
   const updateDeal = useUpdateDeal();
   const { data: stagesData } = usePipelineStages();
-  const { data: customersData } = useCustomersList({ pageSize: 100 });
+  const { data: companiesData } = useCompaniesList({ pageSize: 100 });
   const { data: contactsData } = useContactsList({
-    customerId: formData.customerId || undefined,
+    companyId: formData.companyId || undefined,
     pageSize: 100,
   });
 
   const stages = stagesData || [];
-  const customers = customersData?.data || [];
+  const companies = companiesData?.data || [];
   const contacts = contactsData?.data || [];
 
   const isSubmitting = createDeal.isPending || updateDeal.isPending;
@@ -90,14 +82,14 @@ export function DealForm({
         const closeDate = deal.expectedCloseDate?.split('T')[0] ?? '';
         setFormData({
           name: deal.name,
-          value: getDealValueAsNumber(deal).toString(),
+          amount: getDealAmountAsNumber(deal).toString(),
           currency: deal.currency ?? 'KWD',
           stageId: deal.stageId,
-          customerId: deal.customerId ?? '',
-          primaryContactId: deal.primaryContactId ?? '',
+          companyId: deal.companyId ?? '',
+          contactId: deal.contactId ?? '',
           expectedCloseDate: closeDate,
-          temperature: deal.temperature ?? '',
-          description: deal.description ?? '',
+          probability: deal.probability?.toString() ?? '',
+          notes: deal.notes ?? '',
         });
       } else {
         // Set defaults for new deal
@@ -112,32 +104,32 @@ export function DealForm({
 
         setFormData({
           name: '',
-          value: '',
+          amount: '',
           currency: 'KWD',
           stageId: defaultStage?.id || '',
-          customerId: '',
-          primaryContactId: '',
+          companyId: '',
+          contactId: '',
           expectedCloseDate: '',
-          temperature: '',
-          description: '',
+          probability: '',
+          notes: '',
         });
       }
       setErrors({});
     }
   }, [isOpen, deal, stages, defaultStageId]);
 
-  // Clear contact when customer changes (contacts are filtered by customer)
+  // Clear contact when company changes (contacts are filtered by company)
   useEffect(() => {
-    if (!isEditing && formData.customerId) {
-      // If the selected contact doesn't belong to the new customer, clear it
-      const contactBelongsToCustomer = contacts.some(
-        (c) => c.id === formData.primaryContactId
+    if (!isEditing && formData.companyId) {
+      // If the selected contact doesn't belong to the new company, clear it
+      const contactBelongsToCompany = contacts.some(
+        (c) => c.id === formData.contactId
       );
-      if (!contactBelongsToCustomer && formData.primaryContactId) {
-        setFormData((prev) => ({ ...prev, primaryContactId: '' }));
+      if (!contactBelongsToCompany && formData.contactId) {
+        setFormData((prev) => ({ ...prev, contactId: '' }));
       }
     }
-  }, [formData.customerId, contacts, formData.primaryContactId, isEditing]);
+  }, [formData.companyId, contacts, formData.contactId, isEditing]);
 
   // Build options
   const stageOptions: SelectOption[] = [...stages]
@@ -147,16 +139,16 @@ export function DealForm({
       label: stage.name,
     }));
 
-  const customerOptions: SelectOption[] = [
-    { value: '', label: 'Select a customer' },
-    ...customers.map((customer) => ({
-      value: customer.id,
-      label: customer.name,
+  const companyOptions: SelectOption[] = [
+    { value: '', label: 'Select a company (optional)' },
+    ...companies.map((company) => ({
+      value: company.id,
+      label: company.name,
     })),
   ];
 
   const contactOptions: SelectOption[] = [
-    { value: '', label: 'No Contact' },
+    { value: '', label: 'Select a contact (optional)' },
     ...contacts.map((contact) => ({
       value: contact.id,
       label: `${contact.firstName} ${contact.lastName || ''}`.trim(),
@@ -168,10 +160,6 @@ export function DealForm({
 
     if (!formData.name.trim()) {
       newErrors.name = 'Deal name is required';
-    }
-
-    if (!formData.customerId) {
-      newErrors.customerId = 'Customer is required';
     }
 
     if (!formData.stageId) {
@@ -190,14 +178,14 @@ export function DealForm({
     try {
       const data = {
         name: formData.name.trim(),
-        value: formData.value ? formData.value : undefined,
+        amount: formData.amount ? parseFloat(formData.amount) : undefined,
         currency: formData.currency,
         stageId: formData.stageId,
-        customerId: formData.customerId,
-        primaryContactId: formData.primaryContactId || undefined,
+        companyId: formData.companyId || undefined,
+        contactId: formData.contactId || undefined,
         expectedCloseDate: formData.expectedCloseDate || undefined,
-        temperature: formData.temperature as 'cold' | 'warm' | 'hot' | undefined,
-        description: formData.description.trim() || undefined,
+        probability: formData.probability ? parseInt(formData.probability, 10) : undefined,
+        notes: formData.notes.trim() || undefined,
       };
 
       if (isEditing && deal) {
@@ -205,17 +193,26 @@ export function DealForm({
           id: deal.id,
           data: {
             name: data.name,
-            value: data.value,
+            amount: data.amount,
             stageId: data.stageId,
-            customerId: data.customerId,
-            primaryContactId: data.primaryContactId || null,
+            companyId: data.companyId || null,
+            contactId: data.contactId || null,
             expectedCloseDate: data.expectedCloseDate || null,
-            temperature: data.temperature || null,
-            description: data.description || null,
+            probability: data.probability,
+            notes: data.notes || null,
           },
         });
       } else {
-        await createDeal.mutateAsync(data);
+        // For create, we need to include pipelineId
+        const defaultPipelineId = stages[0]?.pipelineId;
+        if (!defaultPipelineId) {
+          console.error('No pipeline available');
+          return;
+        }
+        await createDeal.mutateAsync({
+          ...data,
+          pipelineId: defaultPipelineId,
+        });
       }
 
       onClose();
@@ -255,36 +252,34 @@ export function DealForm({
           autoFocus
         />
 
-        {/* Customer */}
+        {/* Company */}
         <Select
-          label="Customer"
-          value={formData.customerId}
-          onChange={(value) => handleChange('customerId', value)}
-          options={customerOptions}
-          error={errors.customerId}
-          placeholder="Select a customer"
+          label="Company"
+          value={formData.companyId}
+          onChange={(value) => handleChange('companyId', value)}
+          options={companyOptions}
+          placeholder="Select a company"
         />
 
-        {/* Contact (filtered by customer) */}
+        {/* Contact (filtered by company) */}
         <Select
-          label="Primary Contact"
-          value={formData.primaryContactId}
-          onChange={(value) => handleChange('primaryContactId', value)}
+          label="Contact"
+          value={formData.contactId}
+          onChange={(value) => handleChange('contactId', value)}
           options={contactOptions}
           placeholder="Link to a contact"
-          disabled={!formData.customerId}
         />
 
-        {/* Value and Currency */}
+        {/* Amount and Currency */}
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-2">
             <Input
-              id="value"
+              id="amount"
               type="number"
-              label="Value"
-              value={formData.value}
-              onChange={(e) => handleChange('value', e.target.value)}
-              error={errors.value}
+              label="Amount"
+              value={formData.amount}
+              onChange={(e) => handleChange('amount', e.target.value)}
+              error={errors.amount}
               placeholder="25000"
               min="0"
               step="100"
@@ -298,7 +293,7 @@ export function DealForm({
           />
         </div>
 
-        {/* Stage and Temperature */}
+        {/* Stage and Probability */}
         <div className="grid grid-cols-2 gap-4">
           <Select
             label="Stage"
@@ -308,11 +303,15 @@ export function DealForm({
             error={errors.stageId}
             placeholder="Select stage"
           />
-          <Select
-            label="Temperature"
-            value={formData.temperature}
-            onChange={(value) => handleChange('temperature', value)}
-            options={temperatureOptions}
+          <Input
+            id="probability"
+            type="number"
+            label="Probability %"
+            value={formData.probability}
+            onChange={(e) => handleChange('probability', e.target.value)}
+            placeholder="50"
+            min="0"
+            max="100"
           />
         </div>
 
@@ -325,18 +324,18 @@ export function DealForm({
           onChange={(e) => handleChange('expectedCloseDate', e.target.value)}
         />
 
-        {/* Description */}
+        {/* Notes */}
         <div>
           <label
-            htmlFor="description"
+            htmlFor="notes"
             className="block text-sm font-medium text-text-secondary mb-1"
           >
-            Description
+            Notes
           </label>
           <textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => handleChange('description', e.target.value)}
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
             placeholder="Deal notes and details..."
             rows={3}
             className="w-full px-3 py-2 rounded-lg border border-bg-tertiary bg-bg-secondary text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent resize-none"

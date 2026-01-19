@@ -3,62 +3,48 @@ import type { Deal, Stage } from '@/types';
 
 export interface CreateDealRequest {
   name: string;
-  customerId: string;
+  companyId?: string;
+  contactId?: string;
+  pipelineId: string;
   stageId: string;
-  primaryContactId?: string;
   ownerId?: string;
-  teamId?: string;
-  value?: string | number;
+  amount?: number;
   currency?: string;
   expectedCloseDate?: string;
   probability?: number;
-  source?: string;
-  temperature?: 'cold' | 'warm' | 'hot';
-  description?: string;
-  requirements?: string;
   notes?: string;
 }
 
 export interface UpdateDealRequest {
   name?: string;
-  customerId?: string;
+  companyId?: string | null;
+  contactId?: string | null;
   stageId?: string;
-  primaryContactId?: string | null;
   ownerId?: string | null;
-  teamId?: string | null;
-  value?: string | number | null;
+  amount?: number | null;
   currency?: string;
   expectedCloseDate?: string | null;
-  actualCloseDate?: string | null;
   probability?: number | null;
-  source?: string | null;
-  temperature?: 'cold' | 'warm' | 'hot' | null;
-  lossReason?: string | null;
-  lossNotes?: string | null;
-  description?: string | null;
-  requirements?: string | null;
+  status?: string;
   notes?: string | null;
+  lostReason?: string | null;
 }
 
 export const dealsApi = {
   list: async (params?: {
     page?: number;
-    pageSize?: number;
-    search?: string;
-    customerId?: string;
+    limit?: number;
+    pipelineId?: string;
     stageId?: string;
     ownerId?: string;
-    all?: boolean;
   }) => {
     const response = await apiClient.get<PaginatedResponse<Deal>>('/deals', {
       params: {
         page: params?.page,
-        pageSize: params?.pageSize,
-        search: params?.search,
-        customerId: params?.customerId,
+        limit: params?.limit,
+        pipelineId: params?.pipelineId,
         stageId: params?.stageId,
         ownerId: params?.ownerId,
-        all: params?.all,
       },
     });
     return transformPagination(response.data);
@@ -90,47 +76,43 @@ export const dealsApi = {
   },
 };
 
-// Pipeline stages API (clik-platform uses flat stages, not nested in pipelines)
-export const pipelineStagesApi = {
-  list: async (): Promise<Stage[]> => {
-    const response = await apiClient.get<Stage[]>('/pipeline-stages');
+// Stages API
+export const stagesApi = {
+  list: async (pipelineId?: string): Promise<Stage[]> => {
+    const response = await apiClient.get<Stage[]>('/stages', {
+      params: pipelineId ? { pipelineId } : undefined,
+    });
     return response.data;
   },
 
   get: async (id: string): Promise<Stage> => {
-    const response = await apiClient.get<Stage>(`/pipeline-stages/${id}`);
+    const response = await apiClient.get<Stage>(`/stages/${id}`);
     return response.data;
   },
 };
 
-// Legacy pipelines API (creates a virtual pipeline from flat stages)
+// Pipelines API
 export const pipelinesApi = {
   list: async () => {
-    const stages = await pipelineStagesApi.list();
-    // Create a virtual "default" pipeline containing all stages
-    const pipeline = {
-      id: 'default',
-      name: 'Sales Pipeline',
-      isDefault: true,
-      stages: stages.sort((a, b) => a.position - b.position),
-    };
-    return { data: [pipeline] };
+    const response = await apiClient.get<Array<{ id: string; name: string; isDefault: boolean; stages: Stage[] }>>('/pipelines');
+    return { data: response.data };
   },
 
-  get: async (_id: string) => {
-    // Always return the single virtual pipeline
-    const stages = await pipelineStagesApi.list();
-    const pipeline = {
-      id: 'default',
-      name: 'Sales Pipeline',
-      isDefault: true,
-      stages: stages.sort((a, b) => a.position - b.position),
-    };
-    return { data: pipeline };
+  get: async (id: string) => {
+    const response = await apiClient.get<{ id: string; name: string; isDefault: boolean; stages: Stage[] }>(`/pipelines/${id}`);
+    return { data: response.data };
   },
 
-  getStages: async (_pipelineId: string) => {
-    const stages = await pipelineStagesApi.list();
-    return { data: stages.sort((a, b) => a.position - b.position) };
+  getDefault: async () => {
+    const response = await apiClient.get<{ id: string; name: string; isDefault: boolean; stages: Stage[] }>('/pipelines/default');
+    return { data: response.data };
+  },
+
+  getStages: async (pipelineId: string) => {
+    const stages = await stagesApi.list(pipelineId);
+    return { data: stages };
   },
 };
+
+// Legacy alias
+export const pipelineStagesApi = stagesApi;

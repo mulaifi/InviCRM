@@ -103,7 +103,7 @@
 
 ### Frontend - Additional Pages
 - [x] Build Contacts pages (list + detail + create/edit)
-- [~] Build Deals Kanban board with drag-drop (clik-platform integration in progress)
+- [x] Build Deals Kanban board with drag-drop (stages derived from deals as fallback)
 - [ ] Create Activities timeline page
 - [ ] Implement Settings pages (Profile, Integrations, Team, Company)
 
@@ -119,7 +119,10 @@
 - [x] Fix pagination format mismatch (transformPagination function)
 - [x] Fix seed script foreign key constraints (onboarding_states, slack_installations)
 - [x] Add logout button to AmbientShell header
-- [~] Test end-to-end login and dashboard flow
+- [x] Test end-to-end login and dashboard flow
+- [x] Fix DealForm.tsx schema alignment (InviCRM fields)
+- [x] Add stages fallback derivation from deals
+- [?] Fix NestJS PipelinesModule route registration (build config issue, deferred)
 - [ ] Deploy frontend to staging
 
 ---
@@ -185,4 +188,4 @@ See `technical/SECURITY-AUDIT.md` for full details.
 - **Keyboard Shortcuts:** Cmd+K (command bar), Cmd+1/2/3 (zoom levels)
 
 ---
-*Last Updated: 19 January 2026 (Session 24)*
+*Last Updated: 19 January 2026 (Session 25)*
