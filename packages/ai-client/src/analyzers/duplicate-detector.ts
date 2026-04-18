@@ -214,7 +214,7 @@ Only return pairs with confidence >= 0.5. Be conservative - false positives are 
     const result = await this.client.completeJSON<{ duplicates: DuplicateMatch[] }>(
       DUPLICATE_PROMPT,
       userMessage,
-      { maxTokens: 2000 },
+      { maxTokens: 2000, useCache: true },
     );
 
     return result?.duplicates || [];

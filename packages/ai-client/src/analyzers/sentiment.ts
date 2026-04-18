@@ -60,6 +60,7 @@ Return JSON with this structure:
     const result = await this.client.completeJSON<SentimentResult>(
       SENTIMENT_PROMPT,
       userMessage,
+      { useCache: true },
     );
 
     return (
@@ -98,7 +99,7 @@ Return JSON with this structure:
       overallSentiment: Sentiment;
       trend: 'improving' | 'stable' | 'declining';
       summary: string;
-    }>(SENTIMENT_PROMPT, userMessage);
+    }>(SENTIMENT_PROMPT, userMessage, { useCache: true });
 
     return (
       result || {

@@ -29,7 +29,7 @@ export class AIClient {
       this.anthropicClient = new Anthropic({
         apiKey: config.apiKey,
       });
-      this.model = config.model || 'claude-3-5-sonnet-20241022';
+      this.model = config.model || 'claude-sonnet-4-6';
     } else {
       // OpenAI-compatible provider (OpenAI, Ollama, LM Studio, etc.)
       const baseUrl = config.baseUrl ||
@@ -46,14 +46,24 @@ export class AIClient {
   async complete(
     systemPrompt: string,
     userMessage: string,
-    options?: { maxTokens?: number; temperature?: number },
+    options?: { maxTokens?: number; temperature?: number; useCache?: boolean },
   ): Promise<string> {
     if (this.provider === 'anthropic' && this.anthropicClient) {
+      const systemParam = options?.useCache
+        ? [
+            {
+              type: 'text' as const,
+              text: systemPrompt,
+              cache_control: { type: 'ephemeral' as const },
+            },
+          ]
+        : systemPrompt;
+
       const response = await this.anthropicClient.messages.create({
         model: this.model,
         max_tokens: options?.maxTokens || this.maxTokens,
         temperature: options?.temperature ?? 0.3,
-        system: systemPrompt,
+        system: systemParam,
         messages: [
           {
             role: 'user',
@@ -90,13 +100,13 @@ export class AIClient {
   async completeJSON<T>(
     systemPrompt: string,
     userMessage: string,
-    options?: { maxTokens?: number },
+    options?: { maxTokens?: number; useCache?: boolean },
   ): Promise<T | null> {
     const response = await this.complete(
       systemPrompt +
         '\n\nRespond ONLY with valid JSON. Do not include any other text or markdown formatting.',
       userMessage,
-      options,
+      { ...options, useCache: options?.useCache ?? true },
     );
 
     try {

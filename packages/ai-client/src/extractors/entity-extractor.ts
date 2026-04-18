@@ -107,7 +107,7 @@ Return JSON with this structure:
     const result = await this.client.completeJSON<ExtractedEntities>(
       SYSTEM_PROMPT,
       userMessage,
-      { maxTokens: 2000 },
+      { maxTokens: 2000, useCache: true },
     );
 
     return (
@@ -137,7 +137,11 @@ Return JSON with this structure:
   "confidence": 0.0-1.0
 }`;
 
-    return this.client.completeJSON<ExtractedContact>(SYSTEM_PROMPT, userMessage);
+    return this.client.completeJSON<ExtractedContact>(
+      SYSTEM_PROMPT,
+      userMessage,
+      { useCache: true },
+    );
   }
 
   async extractFromMeetingNotes(notes: string): Promise<ExtractedEntities> {
@@ -157,7 +161,7 @@ Return JSON with this structure:
     const result = await this.client.completeJSON<ExtractedEntities>(
       SYSTEM_PROMPT,
       userMessage,
-      { maxTokens: 2000 },
+      { maxTokens: 2000, useCache: true },
     );
 
     return (

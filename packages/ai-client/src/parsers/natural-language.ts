@@ -90,6 +90,7 @@ Return JSON with this structure:
     const result = await this.client.completeJSON<Omit<ParsedQuery, 'originalText'>>(
       QUERY_PARSER_PROMPT,
       userMessage,
+      { useCache: true },
     );
 
     return {
@@ -120,6 +121,7 @@ Return JSON with this structure:
     return this.client.completeJSON<ParsedActivityLog>(
       QUERY_PARSER_PROMPT,
       userMessage,
+      { useCache: true },
     );
   }
 

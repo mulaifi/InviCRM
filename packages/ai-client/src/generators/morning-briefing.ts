@@ -145,7 +145,7 @@ Return JSON with this structure:
     const result = await this.client.completeJSON<MorningBriefing>(
       BRIEFING_PROMPT,
       userMessage,
-      { maxTokens: 2048 },
+      { maxTokens: 2048, useCache: true },
     );
 
     return result || this.getDefaultBriefing(input);
